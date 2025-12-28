@@ -30,3 +30,11 @@ vendor/
 # Build directory (if any)
 build/
 dist/
+
+# Config files with sensitive data
+config.json
+.env
+.env.local
+
+# Claude settings (may contain API keys)
+.claude/
