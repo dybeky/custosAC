@@ -122,10 +122,11 @@ echo   1. Дважды кликните на custosAC.exe
 echo   2. Подтвердите запрос на права администратора (появится автоматически)
 echo.
 echo ВАЖНО - БЕЗОПАСНОСТЬ:
-echo   • config.json встроен и зашифрован в .exe файле
+echo   • config.json встроен и зашифрован внутри .exe файла
+echo   • Программа работает автономно без внешних файлов
 echo   • НЕ загружайте internal\config\embedded.go на GitHub!
 echo   • config.json уже в .gitignore
-echo   • Для большей безопасности измените XOR ключ
+echo   • Для большей безопасности измените XOR ключ в tools\encrypt_config.go
 echo.
 echo Промежуточный файл rsrc.syso сохранен для повторной сборки.
 echo Для очистки используйте: del rsrc.syso

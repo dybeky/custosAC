@@ -8,6 +8,9 @@
 *.test
 *.out
 
+# Windows resource file (auto-generated during build)
+rsrc.syso
+
 # Temporary files
 *.tmp
 *.bak

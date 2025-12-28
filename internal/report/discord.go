@@ -25,8 +25,7 @@ func SendDiscordReport() {
 	ui.Log("Загрузка конфигурации...", true)
 	err := config.Load()
 	if err != nil {
-		ui.Log(fmt.Sprintf("Ошибка загрузки конфига: %v", err), false)
-		fmt.Printf("\n%s⚠ Убедитесь, что файл config.json находится рядом с программой%s\n", ui.ColorYellow, ui.ColorReset)
+		ui.Log(fmt.Sprintf("Ошибка загрузки конфигурации: %v", err), false)
 		ui.Pause()
 		return
 	}
