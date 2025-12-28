@@ -12,22 +12,41 @@ import (
 	"strings"
 	"time"
 
+	"manual-cobra/internal/config"
 	"manual-cobra/internal/ui"
 )
 
-// SendDiscordReport отправляет отчет в Discord
+// SendDiscordReport отправляет отчет через Discord бота
 func SendDiscordReport() {
 	ui.PrintHeader()
 	fmt.Printf("\n%s═══ ОТПРАВКА ОТЧЕТА В DISCORD ═══%s\n\n", ui.ColorCyan+ui.ColorBold, ui.ColorReset)
+
+	// Загрузка конфигурации
+	ui.Log("Загрузка конфигурации...", true)
+	err := config.Load()
+	if err != nil {
+		ui.Log(fmt.Sprintf("Ошибка загрузки конфига: %v", err), false)
+		fmt.Printf("\n%s⚠ Убедитесь, что файл config.json находится рядом с программой%s\n", ui.ColorYellow, ui.ColorReset)
+		ui.Pause()
+		return
+	}
+
+	cfg := config.Get()
+	if cfg.DiscordBotToken == "" || cfg.DiscordChannelID == "" {
+		ui.Log("Токен бота или ID канала не настроены", false)
+		ui.Pause()
+		return
+	}
 
 	ui.Log("Подготовка отчета...", true)
 
 	logFilePath, err := CreateLogFile()
 	if err != nil {
 		ui.Log(fmt.Sprintf("Ошибка создания лог-файла: %v", err), false)
-	} else {
-		ui.Log(fmt.Sprintf("Лог-файл создан: %s", logFilePath), true)
+		ui.Pause()
+		return
 	}
+	ui.Log(fmt.Sprintf("Лог-файл создан: %s", logFilePath), true)
 
 	hostname, _ := os.Hostname()
 	username := os.Getenv("USERNAME")
@@ -131,14 +150,26 @@ func SendDiscordReport() {
 		return
 	}
 
-	ui.Log("Отправка в Discord...", true)
+	ui.Log("Отправка через Discord бота...", true)
 
-	// Создаем HTTP клиент с таймаутом
+	// Отправка через Discord Bot API
+	url := fmt.Sprintf("https://discord.com/api/v10/channels/%s/messages", cfg.DiscordChannelID)
+
+	req, err := http.NewRequest("POST", url, &requestBody)
+	if err != nil {
+		ui.Log(fmt.Sprintf("Ошибка создания запроса: %v", err), false)
+		ui.Pause()
+		return
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bot %s", cfg.DiscordBotToken))
+	req.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
 
-	resp, err := client.Post(DiscordWebhook, multipartWriter.FormDataContentType(), &requestBody)
+	resp, err := client.Do(req)
 	if err != nil {
 		ui.Log(fmt.Sprintf("Ошибка отправки: %v", err), false)
 		ui.Pause()

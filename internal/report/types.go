@@ -22,6 +22,3 @@ type ScanResults struct {
 
 // Results глобальная переменная для хранения результатов
 var Results ScanResults
-
-// Discord Webhook URL
-const DiscordWebhook = "https://discord.com/api/webhooks/1454135924056264819/yJQZRpZhFj195l0q00U7Wme3eKKrwBcKoQNu011WzuvjxMSQ7SRyFox_smZQ5LO7wp-Z"
