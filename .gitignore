@@ -4,12 +4,10 @@
 *.so
 *.dylib
 
-# Go build artifacts
-*.test
-*.out
-
-# Windows resource file (auto-generated during build)
-rsrc.syso
+# C# build artifacts
+bin/
+obj/
+publish/
 
 # Temporary files
 *.tmp
@@ -21,16 +19,15 @@ rsrc.syso
 .vscode/
 .idea/
 *.iml
+*.user
+*.suo
 
 # OS files
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Go vendor
-vendor/
-
-# Build directory (if any)
+# Build directory
 build/
 dist/
 
@@ -38,5 +35,5 @@ dist/
 .env
 .env.local
 
-# Claude settings (may contain API keys)
+# Claude settings
 .claude/
