@@ -7,7 +7,7 @@ public static class KeywordMatcher
         "undead", "melony", "fecurity", "ancient", "hack", "cheat", "чит",
         "софт", "loader", "inject", "bypass", "overlay", "esp", "speedhack",
         "лоадер", "hwid", "medusa", "mason", "mas", "smg",
-        "midnight", "fatality", "memesense"
+        "midnight", "fatality", "memesense", "xnor"
     };
 
     public static bool ContainsKeyword(string name)

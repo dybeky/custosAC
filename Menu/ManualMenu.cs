@@ -90,7 +90,7 @@ public static class ManualMenu
         Common.RunCommand("windowsdefender://threat/", "Журнал защиты Windows Defender");
 
         Console.WriteLine($"\n{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}КЛЮЧЕВЫЕ СЛОВА ДЛЯ ПОИСКА:{ConsoleUI.ColorReset}");
-        Console.WriteLine($"  {ConsoleUI.Arrow} undead, melony, ancient, loader");
+        Console.WriteLine($"  {ConsoleUI.Arrow} undead, melony, ancient, loader, xnor");
         Console.WriteLine($"  {ConsoleUI.Arrow} hack, cheat, unturned, bypass");
         Console.WriteLine($"  {ConsoleUI.Arrow} inject, overlay, esp, aimbot");
         ConsoleUI.Pause();
