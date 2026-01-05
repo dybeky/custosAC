@@ -28,6 +28,7 @@ public static class ConsoleUI
     public const string ColorMagenta = "\x1b[35m";
     public const string ColorCyan = "\x1b[36m";
     public const string ColorWhite = "\x1b[37m";
+    public const string ColorOrange = "\x1b[38;5;208m";
     public const string ColorBold = "\x1b[1m";
 
     // Префиксы для логов и сообщений
@@ -69,9 +70,9 @@ public static class ConsoleUI
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.InputEncoding = System.Text.Encoding.UTF8;
         }
-        catch
+        catch (Exception)
         {
-            // Игнорируем ошибки настройки консоли
+            // Консоль может не поддерживать некоторые функции
         }
     }
 
@@ -81,7 +82,7 @@ public static class ConsoleUI
         {
             Console.Clear();
         }
-        catch
+        catch (IOException)
         {
             // Если Clear не работает, используем ANSI
             Console.Write("\x1b[2J\x1b[H");
@@ -91,14 +92,22 @@ public static class ConsoleUI
     public static void PrintHeader()
     {
         ClearScreen();
-        Console.WriteLine(ColorCyan + ColorBold);
         Console.WriteLine();
-        Console.WriteLine("                  █▀▀ █ █ █▀ ▀█▀ █▀█ █▀");
-        Console.WriteLine("                  █▄▄ █▄█ ▄█  █  █▄█ ▄█");
+
+        // Красивый ASCII-арт оранжевого цвета
+        Console.WriteLine($"  {ColorOrange}╭──────────────────────────────────────────────────────────╮{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│                                                          │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│     ██████╗██╗   ██╗███████╗████████╗ ██████╗ ███████╗   │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│    ██╔════╝██║   ██║██╔════╝╚══██╔══╝██╔═══██╗██╔════╝   │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│    ██║     ██║   ██║███████╗   ██║   ██║   ██║███████╗   │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│    ██║     ██║   ██║╚════██║   ██║   ██║   ██║╚════██║   │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│    ╚██████╗╚██████╔╝███████║   ██║   ╚██████╔╝███████║   │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│     ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝    ╚═════╝ ╚══════╝   │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│                                                          │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│               ✦ sdelano s lubovyu ✦                      │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│                                                          │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}╰──────────────────────────────────────────────────────────╯{ColorReset}");
         Console.WriteLine();
-        Console.WriteLine("                   sdelano s lubovyu");
-        Console.WriteLine();
-        Console.WriteLine(ColorReset);
 
         if (_isAdmin)
         {
@@ -155,9 +164,15 @@ public static class ConsoleUI
         }
     }
 
+    // Константы для разделителей
+    public const string SeparatorLong = "────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────";
+    public const string SeparatorMedium = "────────────────────────────────────────────────────────────────────────────────";
+    public const string SeparatorShort = "─────────────────────────────────────────";
+
     public static void Log(string msg, bool ok)
     {
-        // Логирование отключено (как в Go версии)
+        string prefix = ok ? Success : Error;
+        Console.WriteLine($"  {prefix} {msg}");
     }
 
     public static void Pause()
@@ -192,7 +207,7 @@ public static class ConsoleUI
                 Console.WriteLine($"  {ColorCyan}[{i + 1}]{ColorReset} {files[i]}");
             }
 
-            Console.WriteLine($"\n{ColorCyan}{new string('─', 120)}{ColorReset}");
+            Console.WriteLine($"\n{ColorCyan}{SeparatorLong}{ColorReset}");
             Console.WriteLine($"\n{ColorYellow}{ColorBold}Навигация:{ColorReset}");
 
             if (currentPage > 0)
@@ -247,18 +262,16 @@ public static class ConsoleUI
     public static void PrintCleanupMessage()
     {
         Console.WriteLine();
-        Console.WriteLine($"{ColorCyan}{ColorBold}╔═══════════════════════════════════════════════════════════╗{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}║{ColorReset}                                                           {ColorCyan}{ColorBold}║{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}║{ColorReset}    {ColorMagenta}{ColorBold}░█▀▀░█░█░█▀▀░▀█▀░█▀█░█▀▀░░░░░█▀▀░█░█░▀█▀░▀█▀{ColorReset}    {ColorCyan}{ColorBold}║{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}║{ColorReset}    {ColorMagenta}{ColorBold}░█░░░█░█░▀▀█░░█░░█░█░▀▀█░░░░░█▀▀░▄▀▄░░█░░░█░{ColorReset}    {ColorCyan}{ColorBold}║{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}║{ColorReset}    {ColorMagenta}{ColorBold}░▀▀▀░▀▀▀░▀▀▀░░▀░░▀▀▀░▀▀▀░▀░░░▀▀▀░▀░▀░▀▀▀░░▀░{ColorReset}    {ColorCyan}{ColorBold}║{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}║{ColorReset}                                                           {ColorCyan}{ColorBold}║{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}║{ColorReset}           {ColorYellow}{ColorBold}Спасибо за использование!{ColorReset}                   {ColorCyan}{ColorBold}║{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}║{ColorReset}                                                           {ColorCyan}{ColorBold}║{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}║{ColorReset}     {ColorGreen}Ваша система проверена на безопасность{ColorReset}       {ColorCyan}{ColorBold}║{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}║{ColorReset}          {ColorYellow}Будьте бдительны и осторожны!{ColorReset}             {ColorCyan}{ColorBold}║{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}║{ColorReset}                                                           {ColorCyan}{ColorBold}║{ColorReset}");
-        Console.WriteLine($"{ColorCyan}{ColorBold}╚═══════════════════════════════════════════════════════════╝{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}╭──────────────────────────────────────────────────────────╮{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│                                                          │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│      ██████╗ ██╗   ██╗███████╗                           │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│      ██╔══██╗╚██╗ ██╔╝██╔════╝                           │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│      ██████╔╝ ╚████╔╝ █████╗                             │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│      ██╔══██╗  ╚██╔╝  ██╔══╝                             │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│      ██████╔╝   ██║   ███████╗                           │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│      ╚═════╝    ╚═╝   ╚══════╝                           │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}│                                                          │{ColorReset}");
+        Console.WriteLine($"  {ColorOrange}╰──────────────────────────────────────────────────────────╯{ColorReset}");
         Console.WriteLine();
     }
 }

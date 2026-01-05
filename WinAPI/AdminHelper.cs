@@ -18,8 +18,9 @@ public static class AdminHelper
             var principal = new WindowsPrincipal(identity);
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
-        catch
+        catch (Exception)
         {
+            // Не удалось определить права - считаем что не админ
             return false;
         }
     }
@@ -46,9 +47,13 @@ public static class AdminHelper
             Process.Start(startInfo);
             Environment.Exit(0);
         }
-        catch
+        catch (System.ComponentModel.Win32Exception)
         {
-            // Пользователь отменил UAC или ошибка
+            // Пользователь отменил UAC
+        }
+        catch (InvalidOperationException)
+        {
+            // Не удалось запустить процесс
         }
     }
 
@@ -86,9 +91,13 @@ public static class AdminHelper
                     process.Kill();
                 }
             }
-            catch
+            catch (InvalidOperationException)
             {
-                // Игнорируем ошибки при завершении процессов
+                // Процесс уже завершён
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                // Нет прав на завершение процесса
             }
         }
     }

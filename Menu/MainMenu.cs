@@ -14,7 +14,7 @@ public static class MainMenu
             {
                 "Ручная проверка",
                 "Автоматическая проверка",
-                "EXXXXXTRA"
+                "Экстра"
             }, false);
 
             int choice = ConsoleUI.GetChoice(3);
@@ -24,14 +24,13 @@ public static class MainMenu
                 case 0:
                     ConsoleUI.ClearScreen();
                     Console.WriteLine("\n\n");
-                    Console.WriteLine($"  {ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}╔════════════════════════════════════════════╗{ConsoleUI.ColorReset}");
-                    Console.WriteLine($"  {ConsoleUI.ColorCyan}║                                            ║{ConsoleUI.ColorReset}");
-                    Console.WriteLine($"  {ConsoleUI.ColorCyan}║{ConsoleUI.ColorReset}     {ConsoleUI.ColorYellow}+ Закрываем открытые процессы... +{ConsoleUI.ColorReset}    {ConsoleUI.ColorCyan}║{ConsoleUI.ColorReset}");
-                    Console.WriteLine($"  {ConsoleUI.ColorCyan}║                                            ║{ConsoleUI.ColorReset}");
-                    Console.WriteLine($"  {ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}╚════════════════════════════════════════════╝{ConsoleUI.ColorReset}");
+                    Console.WriteLine($"  {ConsoleUI.ColorOrange}╔════════════════════════════════════════════╗{ConsoleUI.ColorReset}");
+                    Console.WriteLine($"  {ConsoleUI.ColorOrange}║     + Закрываем открытые процессы... +     ║{ConsoleUI.ColorReset}");
+                    Console.WriteLine($"  {ConsoleUI.ColorOrange}╚════════════════════════════════════════════╝{ConsoleUI.ColorReset}");
                     Thread.Sleep(800);
                     AdminHelper.KillAllProcesses();
                     ConsoleUI.PrintCleanupMessage();
+                    Thread.Sleep(1500);
                     return;
                 case 1:
                     ManualMenu.Run();

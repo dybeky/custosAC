@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using CustosAC.Helpers;
 using CustosAC.Scanner;
 using CustosAC.UI;
 using CustosAC.WinAPI;
@@ -209,8 +210,18 @@ public static class ManualMenu
                             AdminHelper.TrackProcess(process);
                             Task.Run(() =>
                             {
-                                process.WaitForExit();
-                                AdminHelper.UntrackProcess(process);
+                                try
+                                {
+                                    process.WaitForExit();
+                                }
+                                catch (InvalidOperationException)
+                                {
+                                    // Процесс уже завершился
+                                }
+                                finally
+                                {
+                                    AdminHelper.UntrackProcess(process);
+                                }
                             });
                             ConsoleUI.Log("Regedit открыт", true);
                         }
@@ -242,29 +253,8 @@ public static class ManualMenu
         ConsoleUI.PrintHeader();
         Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ ПРОВЕРКА STEAM АККАУНТОВ ═══{ConsoleUI.ColorReset}\n");
 
-        var vdfPaths = new List<string>
-        {
-            @"C:\Program Files (x86)\Steam\config\loginusers.vdf",
-            @"C:\Program Files\Steam\config\loginusers.vdf"
-        };
-
-        var drives = new[] { "D:", "E:", "F:" };
-        foreach (var drive in drives)
-        {
-            vdfPaths.Add(Path.Combine(drive, "Steam", "config", "loginusers.vdf"));
-            vdfPaths.Add(Path.Combine(drive, "Program Files (x86)", "Steam", "config", "loginusers.vdf"));
-            vdfPaths.Add(Path.Combine(drive, "Program Files", "Steam", "config", "loginusers.vdf"));
-        }
-
-        string? vdfPath = null;
-        foreach (var path in vdfPaths)
-        {
-            if (File.Exists(path))
-            {
-                vdfPath = path;
-                break;
-            }
-        }
+        var vdfPaths = DriveHelper.GetSteamLoginUsersPaths();
+        var vdfPath = DriveHelper.FindFirstExistingFile(vdfPaths);
 
         if (vdfPath == null)
         {
@@ -279,7 +269,7 @@ public static class ManualMenu
 
         SteamScanner.ParseSteamAccountsFromPath(vdfPath);
 
-        Console.WriteLine($"\n{ConsoleUI.ColorCyan}─────────────────────────────────────────{ConsoleUI.ColorReset}");
+        Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.SeparatorShort}{ConsoleUI.ColorReset}");
 
         Console.WriteLine($"\n{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}ЧТО НУЖНО ПРОВЕРИТЬ:{ConsoleUI.ColorReset}");
         Console.WriteLine($"  {ConsoleUI.Arrow} Конфигурационные файлы Steam");
@@ -294,40 +284,22 @@ public static class ManualMenu
         ConsoleUI.PrintHeader();
         Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ UNTURNED ═══{ConsoleUI.ColorReset}\n");
 
-        var possiblePaths = new List<string>
-        {
-            @"C:\Program Files (x86)\Steam\steamapps\common\Unturned\Screenshots",
-            @"C:\Program Files\Steam\steamapps\common\Unturned\Screenshots"
-        };
+        var possiblePaths = DriveHelper.GetUnturnedScreenshotsPaths();
+        var screenshots = DriveHelper.FindFirstExistingDirectory(possiblePaths);
 
-        var drives = new[] { "D:", "E:", "F:" };
-        foreach (var drive in drives)
+        if (screenshots != null)
         {
-            possiblePaths.Add(Path.Combine(drive, "Steam", "steamapps", "common", "Unturned", "Screenshots"));
-            possiblePaths.Add(Path.Combine(drive, "Program Files (x86)", "Steam", "steamapps", "common", "Unturned", "Screenshots"));
-            possiblePaths.Add(Path.Combine(drive, "Program Files", "Steam", "steamapps", "common", "Unturned", "Screenshots"));
-        }
-
-        bool found = false;
-        foreach (var screenshots in possiblePaths)
-        {
-            if (Directory.Exists(screenshots))
+            Console.WriteLine($"  {ConsoleUI.Info} Найдено: {ConsoleUI.ColorCyan}{screenshots}{ConsoleUI.ColorReset}\n");
+            if (Common.OpenFolder(screenshots, "Папка Screenshots Unturned"))
             {
-                found = true;
-                Console.WriteLine($"  {ConsoleUI.Info} Найдено: {ConsoleUI.ColorCyan}{screenshots}{ConsoleUI.ColorReset}\n");
-                if (Common.OpenFolder(screenshots, "Папка Screenshots Unturned"))
-                {
-                    Console.WriteLine($"\n{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}ЧТО НУЖНО ПРОВЕРИТЬ:{ConsoleUI.ColorReset}");
-                    Console.WriteLine($"  {ConsoleUI.Arrow} UI читов на скриншотах");
-                    Console.WriteLine($"  {ConsoleUI.Arrow} ESP/Wallhack индикаторы");
-                    Console.WriteLine($"  {ConsoleUI.Arrow} Overlay меню");
-                    Console.WriteLine($"  {ConsoleUI.Arrow} Необычные элементы интерфейса");
-                }
-                break;
+                Console.WriteLine($"\n{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}ЧТО НУЖНО ПРОВЕРИТЬ:{ConsoleUI.ColorReset}");
+                Console.WriteLine($"  {ConsoleUI.Arrow} UI читов на скриншотах");
+                Console.WriteLine($"  {ConsoleUI.Arrow} ESP/Wallhack индикаторы");
+                Console.WriteLine($"  {ConsoleUI.Arrow} Overlay меню");
+                Console.WriteLine($"  {ConsoleUI.Arrow} Необычные элементы интерфейса");
             }
         }
-
-        if (!found)
+        else
         {
             ConsoleUI.Log(@"Папка Steam\steamapps\common\Unturned\Screenshots не найдена в системе", false);
             Console.WriteLine($"\n{ConsoleUI.Warning} {ConsoleUI.ColorYellow}Unturned может быть не установлен или находится в нестандартной директории{ConsoleUI.ColorReset}");

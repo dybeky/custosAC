@@ -34,7 +34,7 @@ public static class AppDataScanner
 
             if (i > 0)
             {
-                Console.WriteLine($"\n{ConsoleUI.ColorCyan}{new string('─', 120)}{ConsoleUI.ColorReset}\n");
+                Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.SeparatorLong}{ConsoleUI.ColorReset}\n");
             }
 
             Console.WriteLine($"{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}[СКАНИРОВАНИЕ {i + 1}/{folders.Length}]{ConsoleUI.ColorReset} {ConsoleUI.ColorCyan}{folder.name}{ConsoleUI.ColorReset}");

@@ -10,7 +10,7 @@ public static class ExtraMenu
         while (true)
         {
             ConsoleUI.PrintHeader();
-            ConsoleUI.PrintMenu("EXXXXXTRA", new[]
+            ConsoleUI.PrintMenu("ЭКСТРА", new[]
             {
                 "Включить реестр",
                 "Включить параметры системы и сеть"
@@ -91,14 +91,19 @@ public static class ExtraMenu
         {
             try
             {
+                // Используем ArgumentList для безопасной передачи аргументов
                 var psi = new ProcessStartInfo
                 {
                     FileName = "reg",
-                    Arguments = $"delete \"{key}\" /v {value} /f",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardError = true
                 };
+                psi.ArgumentList.Add("delete");
+                psi.ArgumentList.Add(key);
+                psi.ArgumentList.Add("/v");
+                psi.ArgumentList.Add(value);
+                psi.ArgumentList.Add("/f");
 
                 using var process = Process.Start(psi);
                 process?.WaitForExit();
@@ -108,9 +113,10 @@ public static class ExtraMenu
                     ConsoleUI.Log($"+ Удалена блокировка {value} ({location})", true);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Игнорируем ошибки - ключ может не существовать
+                // Ключ может не существовать - логируем для отладки
+                ConsoleUI.Log($"Не удалось удалить {value}: {ex.Message}", false);
             }
         }
 
@@ -141,9 +147,9 @@ public static class ExtraMenu
                 success = false;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            ConsoleUI.Log("Не удалось открыть параметры сети", false);
+            ConsoleUI.Log($"Не удалось открыть параметры сети: {ex.Message}", false);
             success = false;
         }
 

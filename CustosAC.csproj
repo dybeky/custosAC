@@ -8,10 +8,13 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>custosACicon.ico</ApplicationIcon>
     <AssemblyName>CustosAC</AssemblyName>
-    <RootNamespace>CustosAC</RootNamespace>
+
+    <!-- Один EXE файл -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
 </Project>

@@ -1,3 +1,4 @@
+using CustosAC.Helpers;
 using CustosAC.UI;
 
 namespace CustosAC.Scanner;
@@ -62,29 +63,8 @@ public static class SteamScanner
         ConsoleUI.PrintHeader();
         Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ ПАРСИНГ STEAM АККАУНТОВ ═══{ConsoleUI.ColorReset}\n");
 
-        var possiblePaths = new List<string>
-        {
-            @"C:\Program Files (x86)\Steam\config\loginusers.vdf",
-            @"C:\Program Files\Steam\config\loginusers.vdf"
-        };
-
-        var drives = new[] { "D:", "E:", "F:" };
-        foreach (var drive in drives)
-        {
-            possiblePaths.Add(Path.Combine(drive, "Steam", "config", "loginusers.vdf"));
-            possiblePaths.Add(Path.Combine(drive, "Program Files (x86)", "Steam", "config", "loginusers.vdf"));
-            possiblePaths.Add(Path.Combine(drive, "Program Files", "Steam", "config", "loginusers.vdf"));
-        }
-
-        string? vdfPath = null;
-        foreach (var path in possiblePaths)
-        {
-            if (File.Exists(path))
-            {
-                vdfPath = path;
-                break;
-            }
-        }
+        var possiblePaths = DriveHelper.GetSteamLoginUsersPaths();
+        var vdfPath = DriveHelper.FindFirstExistingFile(possiblePaths);
 
         if (vdfPath == null)
         {

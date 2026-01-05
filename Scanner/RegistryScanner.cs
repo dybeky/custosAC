@@ -45,7 +45,7 @@ public static class RegistryScanner
 
                 if (processedKeys > 0)
                 {
-                    Console.WriteLine($"{ConsoleUI.ColorCyan}{new string('─', 80)}{ConsoleUI.ColorReset}");
+                    Console.WriteLine($"{ConsoleUI.ColorCyan}{ConsoleUI.SeparatorMedium}{ConsoleUI.ColorReset}");
                 }
 
                 Console.WriteLine($"\n{ConsoleUI.ColorYellow}[СКАНИРОВАНИЕ {i + 1}/{registryKeys.Length}]{ConsoleUI.ColorReset} {regKey.name}");
@@ -55,14 +55,18 @@ public static class RegistryScanner
 
                 try
                 {
+                    // Используем ArgumentList для безопасной передачи аргументов
                     var psi = new ProcessStartInfo
                     {
                         FileName = "reg",
-                        Arguments = $"export \"{regKey.path}\" \"{outputFile}\" /y",
                         UseShellExecute = false,
                         CreateNoWindow = true,
                         RedirectStandardError = true
                     };
+                    psi.ArgumentList.Add("export");
+                    psi.ArgumentList.Add(regKey.path);
+                    psi.ArgumentList.Add(outputFile);
+                    psi.ArgumentList.Add("/y");
 
                     using var process = Process.Start(psi);
                     process?.WaitForExit();
@@ -125,9 +129,10 @@ public static class RegistryScanner
             {
                 Directory.Delete(tempDir, true);
             }
-            catch
+            catch (Exception ex)
             {
-                // Игнорируем ошибки удаления
+                // Логируем ошибку удаления временной папки
+                ConsoleUI.Log($"Не удалось удалить временную папку: {ex.Message}", false);
             }
         }
 

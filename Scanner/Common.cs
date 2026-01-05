@@ -42,8 +42,18 @@ public static class Common
                 AdminHelper.TrackProcess(process);
                 Task.Run(() =>
                 {
-                    process.WaitForExit();
-                    AdminHelper.UntrackProcess(process);
+                    try
+                    {
+                        process.WaitForExit();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Процесс уже завершился или недоступен
+                    }
+                    finally
+                    {
+                        AdminHelper.UntrackProcess(process);
+                    }
                 });
             }
 
@@ -61,12 +71,11 @@ public static class Common
     {
         try
         {
+            // Используем UseShellExecute для безопасного открытия URL и команд
             var process = Process.Start(new ProcessStartInfo
             {
-                FileName = "cmd",
-                Arguments = $"/c start {command}",
-                UseShellExecute = false,
-                CreateNoWindow = true
+                FileName = command,
+                UseShellExecute = true
             });
 
             if (process != null)
@@ -74,8 +83,18 @@ public static class Common
                 AdminHelper.TrackProcess(process);
                 Task.Run(() =>
                 {
-                    process.WaitForExit();
-                    AdminHelper.UntrackProcess(process);
+                    try
+                    {
+                        process.WaitForExit();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Процесс уже завершился или недоступен
+                    }
+                    finally
+                    {
+                        AdminHelper.UntrackProcess(process);
+                    }
                 });
             }
 
@@ -189,8 +208,18 @@ public static class Common
                 AdminHelper.TrackProcess(regProcess);
                 Task.Run(() =>
                 {
-                    regProcess.WaitForExit();
-                    AdminHelper.UntrackProcess(regProcess);
+                    try
+                    {
+                        regProcess.WaitForExit();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Процесс уже завершился или недоступен
+                    }
+                    finally
+                    {
+                        AdminHelper.UntrackProcess(regProcess);
+                    }
                 });
             }
 
@@ -231,7 +260,7 @@ public static class Common
             }
         }
 
-        Console.WriteLine($"\n{ConsoleUI.ColorCyan}─────────────────────────────────────────{ConsoleUI.ColorReset}");
+        Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.SeparatorShort}{ConsoleUI.ColorReset}");
 
         Console.WriteLine($"\n  {ConsoleUI.ColorBlue}[i]{ConsoleUI.ColorReset} Поиск папки загрузок Telegram...\n");
 
@@ -333,15 +362,23 @@ public static class Common
                         }
                     }
                 }
-                catch
+                catch (UnauthorizedAccessException)
                 {
-                    // Игнорируем ошибки доступа к отдельным файлам/папкам
+                    // Ожидаемо: нет доступа к файлу/папке
+                }
+                catch (IOException)
+                {
+                    // Ожидаемо: файл занят или недоступен
                 }
             }
         }
-        catch
+        catch (UnauthorizedAccessException)
         {
-            // Игнорируем ошибки доступа к директории
+            // Ожидаемо: нет доступа к директории
+        }
+        catch (IOException)
+        {
+            // Ожидаемо: директория недоступна
         }
 
         return results;
