@@ -30,34 +30,12 @@ public static class Common
 
         try
         {
-            var process = Process.Start(new ProcessStartInfo
+            StartTrackedProcess(new ProcessStartInfo
             {
                 FileName = "explorer",
                 Arguments = path,
                 UseShellExecute = true
-            });
-
-            if (process != null)
-            {
-                AdminHelper.TrackProcess(process);
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        process.WaitForExit();
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // Процесс уже завершился или недоступен
-                    }
-                    finally
-                    {
-                        AdminHelper.UntrackProcess(process);
-                    }
-                });
-            }
-
-            ConsoleUI.Log($"{desc}: {path}", true);
+            }, $"{desc}: {path}");
             return true;
         }
         catch (Exception ex)
@@ -71,34 +49,11 @@ public static class Common
     {
         try
         {
-            // Используем UseShellExecute для безопасного открытия URL и команд
-            var process = Process.Start(new ProcessStartInfo
+            StartTrackedProcess(new ProcessStartInfo
             {
                 FileName = command,
                 UseShellExecute = true
-            });
-
-            if (process != null)
-            {
-                AdminHelper.TrackProcess(process);
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        process.WaitForExit();
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // Процесс уже завершился или недоступен
-                    }
-                    finally
-                    {
-                        AdminHelper.UntrackProcess(process);
-                    }
-                });
-            }
-
-            ConsoleUI.Log(desc, true);
+            }, desc);
             return true;
         }
         catch (Exception ex)
@@ -112,24 +67,7 @@ public static class Common
     {
         try
         {
-            var keywordsStr = KeywordMatcher.GetKeywordsString();
-
-            var psi = new ProcessStartInfo
-            {
-                FileName = "clip",
-                RedirectStandardInput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(psi);
-            if (process != null)
-            {
-                process.StandardInput.Write(keywordsStr);
-                process.StandardInput.Close();
-                process.WaitForExit();
-            }
-
+            CopyToClipboard(KeywordMatcher.GetKeywordsString());
             ConsoleUI.Log("Ключевые слова скопированы в буфер обмена!", true);
             Console.WriteLine($"\n{ConsoleUI.ColorYellow}Теперь можно вставить (Ctrl+V) в Everything, LastActivityView и другие программы{ConsoleUI.ColorReset}");
         }
@@ -177,52 +115,12 @@ public static class Common
     {
         try
         {
-            // Копируем путь в буфер обмена
-            var psi = new ProcessStartInfo
-            {
-                FileName = "clip",
-                RedirectStandardInput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using (var process = Process.Start(psi))
-            {
-                if (process != null)
-                {
-                    process.StandardInput.Write(path);
-                    process.StandardInput.Close();
-                    process.WaitForExit();
-                }
-            }
-
-            // Открываем regedit
-            var regProcess = Process.Start(new ProcessStartInfo
+            CopyToClipboard(path);
+            StartTrackedProcess(new ProcessStartInfo
             {
                 FileName = "regedit.exe",
                 UseShellExecute = true
             });
-
-            if (regProcess != null)
-            {
-                AdminHelper.TrackProcess(regProcess);
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        regProcess.WaitForExit();
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        // Процесс уже завершился или недоступен
-                    }
-                    finally
-                    {
-                        AdminHelper.UntrackProcess(regProcess);
-                    }
-                });
-            }
-
             ConsoleUI.Log($"Путь скопирован: {path}", true);
             Console.WriteLine($"{ConsoleUI.ColorYellow}Вставьте путь в regedit (Ctrl+V){ConsoleUI.ColorReset}");
             return true;
@@ -231,6 +129,27 @@ public static class Common
         {
             ConsoleUI.Log($"Ошибка: {ex.Message}", false);
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Копирует текст в буфер обмена
+    /// </summary>
+    public static void CopyToClipboard(string text)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "clip",
+            RedirectStandardInput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        using var process = Process.Start(psi);
+        if (process != null)
+        {
+            process.StandardInput.Write(text);
+            process.StandardInput.Close();
+            process.WaitForExit();
         }
     }
 
@@ -384,8 +303,48 @@ public static class Common
         return results;
     }
 
-    public static async Task<List<string>> ScanFolderOptimizedAsync(string path, string[] extensions, int maxDepth, int currentDepth = 0)
+    /// <summary>
+    /// Запускает процесс с отслеживанием для автоматического закрытия при выходе
+    /// </summary>
+    private static void StartTrackedProcess(ProcessStartInfo psi, string? logMessage = null)
     {
-        return await Task.Run(() => ScanFolderOptimized(path, extensions, maxDepth, currentDepth));
+        var process = Process.Start(psi);
+        if (process != null)
+        {
+            AdminHelper.TrackProcess(process);
+            Task.Run(() =>
+            {
+                try { process.WaitForExit(); }
+                catch (InvalidOperationException) { }
+                finally { AdminHelper.UntrackProcess(process); }
+            });
+        }
+        if (logMessage != null)
+            ConsoleUI.Log(logMessage, true);
+    }
+
+    /// <summary>
+    /// Отображает результаты сканирования с пагинацией
+    /// </summary>
+    public static void DisplayScanResults(List<string> results, string itemName = "файлов")
+    {
+        if (results.Count > 0)
+        {
+            ConsoleUI.Log($"Всего найдено подозрительных {itemName}: {results.Count}", false);
+            Console.WriteLine($"\n{ConsoleUI.ColorGreen}[V]{ConsoleUI.ColorReset} - Просмотреть все постранично");
+            Console.WriteLine($"{ConsoleUI.ColorCyan}[0]{ConsoleUI.ColorReset} - Продолжить");
+            Console.Write($"\n{ConsoleUI.ColorGreen}{ConsoleUI.ColorBold}[>]{ConsoleUI.ColorReset} Выберите действие: ");
+
+            var choice = Console.ReadLine()?.ToLower().Trim();
+            if (choice == "v")
+            {
+                ConsoleUI.DisplayFilesWithPagination(results, 25);
+            }
+        }
+        else
+        {
+            ConsoleUI.Log($"Подозрительных {itemName} не найдено", true);
+            ConsoleUI.Pause();
+        }
     }
 }

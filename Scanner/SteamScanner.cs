@@ -64,7 +64,7 @@ public static class SteamScanner
         Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ ПАРСИНГ STEAM АККАУНТОВ ═══{ConsoleUI.ColorReset}\n");
 
         var possiblePaths = DriveHelper.GetSteamLoginUsersPaths();
-        var vdfPath = DriveHelper.FindFirstExistingFile(possiblePaths);
+        var vdfPath = DriveHelper.FindFirstExisting(possiblePaths);
 
         if (vdfPath == null)
         {

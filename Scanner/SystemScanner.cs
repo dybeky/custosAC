@@ -31,7 +31,7 @@ public static class SystemScanner
         Console.WriteLine($"{ConsoleUI.Warning} {ConsoleUI.ColorYellow}Это может занять некоторое время...{ConsoleUI.ColorReset}\n");
 
         var allResults = new List<string>();
-        int processedFolders = 0;
+        bool isFirst = true;
 
         for (int i = 0; i < folders.Length; i++)
         {
@@ -43,11 +43,11 @@ public static class SystemScanner
                 continue;
             }
 
-            if (processedFolders > 0)
+            if (!isFirst)
             {
                 Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.SeparatorLong}{ConsoleUI.ColorReset}\n");
             }
-            processedFolders++;
+            isFirst = false;
 
             Console.WriteLine($"{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}[СКАНИРОВАНИЕ {i + 1}/{folders.Length}]{ConsoleUI.ColorReset} {ConsoleUI.ColorCyan}{folder.name}{ConsoleUI.ColorReset}");
             Console.WriteLine($"{ConsoleUI.ColorBlue}Путь: {folder.path}{ConsoleUI.ColorReset}\n");
@@ -74,24 +74,6 @@ public static class SystemScanner
         }
 
         Console.WriteLine();
-        if (allResults.Count > 0)
-        {
-            ConsoleUI.Log($"Всего найдено подозрительных файлов: {allResults.Count}", false);
-            Console.WriteLine($"\n{ConsoleUI.ColorGreen}[V]{ConsoleUI.ColorReset} - Просмотреть все файлы постранично");
-            Console.WriteLine($"{ConsoleUI.ColorCyan}[0]{ConsoleUI.ColorReset} - Продолжить");
-            Console.Write($"\n{ConsoleUI.ColorGreen}{ConsoleUI.ColorBold}[>]{ConsoleUI.ColorReset} Выберите действие: ");
-
-            var choice = Console.ReadLine()?.ToLower().Trim();
-
-            if (choice == "v")
-            {
-                ConsoleUI.DisplayFilesWithPagination(allResults, 25);
-            }
-        }
-        else
-        {
-            ConsoleUI.Log("Подозрительных файлов не найдено", true);
-            ConsoleUI.Pause();
-        }
+        Common.DisplayScanResults(allResults);
     }
 }

@@ -52,24 +52,6 @@ public static class PrefetchScanner
         }
 
         Console.WriteLine();
-        if (suspiciousFiles.Count > 0)
-        {
-            ConsoleUI.Log($"Найдено подозрительных .pf файлов: {suspiciousFiles.Count}", false);
-            Console.WriteLine($"\n{ConsoleUI.ColorGreen}[V]{ConsoleUI.ColorReset} - Просмотреть все файлы постранично");
-            Console.WriteLine($"{ConsoleUI.ColorCyan}[0]{ConsoleUI.ColorReset} - Продолжить");
-            Console.Write($"\n{ConsoleUI.ColorGreen}{ConsoleUI.ColorBold}[>]{ConsoleUI.ColorReset} Выберите действие: ");
-
-            var choice = Console.ReadLine()?.ToLower().Trim();
-
-            if (choice == "v")
-            {
-                ConsoleUI.DisplayFilesWithPagination(suspiciousFiles, 25);
-            }
-        }
-        else
-        {
-            ConsoleUI.Log("Подозрительных .pf файлов не найдено", true);
-            ConsoleUI.Pause();
-        }
+        Common.DisplayScanResults(suspiciousFiles, ".pf файлов");
     }
 }

@@ -1,8 +1,6 @@
-using System.Diagnostics;
 using CustosAC.Helpers;
 using CustosAC.Scanner;
 using CustosAC.UI;
-using CustosAC.WinAPI;
 
 namespace CustosAC.Menu;
 
@@ -197,54 +195,19 @@ public static class ManualMenu
             switch (choice)
             {
                 case 1:
-                    try
-                    {
-                        var process = Process.Start(new ProcessStartInfo
-                        {
-                            FileName = "regedit.exe",
-                            UseShellExecute = true
-                        });
-
-                        if (process != null)
-                        {
-                            AdminHelper.TrackProcess(process);
-                            Task.Run(() =>
-                            {
-                                try
-                                {
-                                    process.WaitForExit();
-                                }
-                                catch (InvalidOperationException)
-                                {
-                                    // Процесс уже завершился
-                                }
-                                finally
-                                {
-                                    AdminHelper.UntrackProcess(process);
-                                }
-                            });
-                            ConsoleUI.Log("Regedit открыт", true);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        ConsoleUI.Log($"Ошибка: {ex.Message}", false);
-                    }
-                    ConsoleUI.Pause();
+                    Common.RunCommand("regedit.exe", "Regedit открыт");
                     break;
                 case 2:
                     Common.OpenRegistry(@"HKEY_CURRENT_USER\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache");
-                    ConsoleUI.Pause();
                     break;
                 case 3:
                     Common.OpenRegistry(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched");
-                    ConsoleUI.Pause();
                     break;
                 case 4:
                     Common.OpenRegistry(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView");
-                    ConsoleUI.Pause();
                     break;
             }
+            ConsoleUI.Pause();
         }
     }
 
@@ -254,7 +217,7 @@ public static class ManualMenu
         Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ ПРОВЕРКА STEAM АККАУНТОВ ═══{ConsoleUI.ColorReset}\n");
 
         var vdfPaths = DriveHelper.GetSteamLoginUsersPaths();
-        var vdfPath = DriveHelper.FindFirstExistingFile(vdfPaths);
+        var vdfPath = DriveHelper.FindFirstExisting(vdfPaths);
 
         if (vdfPath == null)
         {
@@ -285,7 +248,7 @@ public static class ManualMenu
         Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ UNTURNED ═══{ConsoleUI.ColorReset}\n");
 
         var possiblePaths = DriveHelper.GetUnturnedScreenshotsPaths();
-        var screenshots = DriveHelper.FindFirstExistingDirectory(possiblePaths);
+        var screenshots = DriveHelper.FindFirstExisting(possiblePaths, isFile: false);
 
         if (screenshots != null)
         {

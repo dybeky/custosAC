@@ -35,15 +35,13 @@ public static class RegistryScanner
             return;
         }
 
-        int processedKeys = 0;
-
         try
         {
             for (int i = 0; i < registryKeys.Length; i++)
             {
                 var regKey = registryKeys[i];
 
-                if (processedKeys > 0)
+                if (i > 0)
                 {
                     Console.WriteLine($"{ConsoleUI.ColorCyan}{ConsoleUI.SeparatorMedium}{ConsoleUI.ColorReset}");
                 }
@@ -76,8 +74,6 @@ public static class RegistryScanner
                         Console.WriteLine($"{ConsoleUI.Warning} {ConsoleUI.ColorYellow}Ключ не существует или недоступен: {regKey.name}{ConsoleUI.ColorReset}\n");
                         continue;
                     }
-
-                    processedKeys++;
 
                     var content = File.ReadAllText(outputFile);
                     var lines = content.Split('\n');
@@ -137,24 +133,6 @@ public static class RegistryScanner
         }
 
         Console.WriteLine();
-        if (allFindings.Count > 0)
-        {
-            ConsoleUI.Log($"Всего найдено подозрительных записей: {allFindings.Count}", false);
-            Console.WriteLine($"\n{ConsoleUI.ColorGreen}[V]{ConsoleUI.ColorReset} - Просмотреть все записи постранично");
-            Console.WriteLine($"{ConsoleUI.ColorCyan}[0]{ConsoleUI.ColorReset} - Продолжить");
-            Console.Write($"\n{ConsoleUI.ColorGreen}{ConsoleUI.ColorBold}[>]{ConsoleUI.ColorReset} Выберите действие: ");
-
-            var choice = Console.ReadLine()?.ToLower().Trim();
-
-            if (choice == "v")
-            {
-                ConsoleUI.DisplayFilesWithPagination(allFindings, 25);
-            }
-        }
-        else
-        {
-            ConsoleUI.Log("Подозрительных записей в реестре не найдено", true);
-            ConsoleUI.Pause();
-        }
+        Common.DisplayScanResults(allFindings, "записей");
     }
 }
