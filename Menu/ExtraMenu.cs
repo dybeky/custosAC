@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using CustosAC.Constants;
 using CustosAC.UI;
 
 namespace CustosAC.Menu;
@@ -28,9 +29,13 @@ public static class ExtraMenu
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // ВКЛЮЧЕНИЕ РЕЕСТРА
+    // ═══════════════════════════════════════════════════════════════
+
     private static void EnableRegistry()
     {
-        bool success = RunRegCommand(@"delete ""HKLM\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\regedit.exe"" /f");
+        bool success = RunRegDelete(RegistryConstants.RegeditBlockPath);
 
         if (success)
         {
@@ -45,6 +50,10 @@ public static class ExtraMenu
         ConsoleUI.Pause();
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // ВКЛЮЧЕНИЕ ПАРАМЕТРОВ СИСТЕМЫ И СЕТИ
+    // ═══════════════════════════════════════════════════════════════
+
     private static void EnableSystemSettings()
     {
         ConsoleUI.Log("Разблокируем доступ к параметрам системы и сети...", true);
@@ -53,135 +62,103 @@ public static class ExtraMenu
         int unlockedCount = 0;
 
         // 1. Удаление отдельных значений реестра
-        var valuesToDelete = new (string key, string value)[]
-        {
-            // Панель управления и параметры
-            (@"HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer", "NoControlPanel"),
-            (@"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer", "NoControlPanel"),
-            (@"HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer", "SettingsPageVisibility"),
-            (@"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer", "SettingsPageVisibility"),
-            (@"HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer", "DisallowCpl"),
-            (@"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer", "DisallowCpl"),
-            // Устаревшие ключи сети
-            (@"HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Network", "NoNetSetup"),
-            (@"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\Network", "NoNetSetup"),
-            (@"HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Network", "NoNetSetupSecurityPage"),
-            (@"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\Network", "NoNetSetupSecurityPage"),
-            (@"HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Network", "NoNetSetupIDPage"),
-            (@"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\Network", "NoNetSetupIDPage"),
-            // Network Connections
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_AllowAdvancedTCPIPConfig"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_AllowAdvancedTCPIPConfig"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_LanConnect"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_LanConnect"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_LanProperties"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_LanProperties"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_LanChangeProperties"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_LanChangeProperties"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_NewConnectionWizard"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_NewConnectionWizard"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_DialupPrefs"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_DialupPrefs"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_ChangeBindState"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_ChangeBindState"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_AddRemoveComponents"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_AddRemoveComponents"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_Statistics"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_Statistics"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_EnableAdminProhibits"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_EnableAdminProhibits"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_ShowSharedAccessUI"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_ShowSharedAccessUI"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_PersonalFirewallConfig"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_PersonalFirewallConfig"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_ICSEnable"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_ICSEnable"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_RenameConnection"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_RenameConnection"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_DeleteConnection"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_DeleteConnection"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_RasAllUserProperties"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_RasAllUserProperties"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_RasMyProperties"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_RasMyProperties"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\Network Connections", "NC_RasConnect"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\Network Connections", "NC_RasConnect"),
-            // Internet Explorer
-            (@"HKCU\Software\Policies\Microsoft\Internet Explorer\Control Panel", "ConnectionsTab"),
-            (@"HKLM\Software\Policies\Microsoft\Internet Explorer\Control Panel", "ConnectionsTab"),
-            (@"HKCU\Software\Policies\Microsoft\Internet Explorer\Control Panel", "Connwiz Admin Lock"),
-            (@"HKLM\Software\Policies\Microsoft\Internet Explorer\Control Panel", "Connwiz Admin Lock"),
-            (@"HKCU\Software\Policies\Microsoft\Internet Explorer\Control Panel", "Connection Settings"),
-            (@"HKLM\Software\Policies\Microsoft\Internet Explorer\Control Panel", "Connection Settings"),
-            (@"HKCU\Software\Policies\Microsoft\Internet Explorer\Control Panel", "Proxy"),
-            (@"HKLM\Software\Policies\Microsoft\Internet Explorer\Control Panel", "Proxy"),
-            (@"HKCU\Software\Policies\Microsoft\Internet Explorer\Control Panel", "AutoConfig"),
-            (@"HKLM\Software\Policies\Microsoft\Internet Explorer\Control Panel", "AutoConfig"),
-            (@"HKCU\Software\Policies\Microsoft\Internet Explorer\Control Panel", "LAN Settings"),
-            (@"HKLM\Software\Policies\Microsoft\Internet Explorer\Control Panel", "LAN Settings"),
-            // Windows Settings
-            (@"HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System", "NoDispCPL"),
-            (@"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System", "NoDispCPL"),
-            (@"HKCU\Software\Policies\Microsoft\Windows\System", "SettingsPageVisibility"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\System", "SettingsPageVisibility"),
-            // Wi-Fi
-            (@"HKCU\Software\Policies\Microsoft\Windows\System", "DenyDeviceIDs"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\System", "DenyDeviceIDs"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\WcmSvc\GroupPolicy", "fBlockNonDomain"),
-            (@"HKLM\Software\Policies\Microsoft\Windows\WcmSvc\GroupPolicy", "fMinimizeConnections"),
-        };
-
-        ConsoleUI.Log("Удаляем блокировки реестра...", true);
-        foreach (var (key, value) in valuesToDelete)
-        {
-            if (DeleteRegistry(key, value)) unlockedCount++;
-        }
+        unlockedCount += DeleteRegistryValues();
 
         // 2. Удаление целых веток реестра
+        unlockedCount += DeleteRegistryKeys();
+
+        // 3. Перезапуск сетевых служб
+        RestartNetworkServices();
+
+        // 4. Сброс сетевых настроек
+        ResetNetworkSettings();
+
+        // 5. Включение сетевых адаптеров
+        EnableNetworkAdapters();
+
+        // 6. Открываем параметры сети
+        OpenNetworkSettings();
+
+        // Итог
+        PrintUnlockResult(unlockedCount);
+        ConsoleUI.Pause();
+    }
+
+    /// <summary>Удаляет отдельные значения реестра для разблокировки</summary>
+    private static int DeleteRegistryValues()
+    {
+        ConsoleUI.Log("Удаляем блокировки реестра...", true);
+
+        int count = 0;
+        foreach (var (key, value) in RegistryConstants.ValuesToDelete)
+        {
+            if (DeleteRegistryValue(key, value))
+                count++;
+        }
+        return count;
+    }
+
+    /// <summary>Удаляет целые ветки реестра</summary>
+    private static int DeleteRegistryKeys()
+    {
         Console.WriteLine();
         ConsoleUI.Log("Удаляем политики полностью...", true);
 
-        var keysToDelete = new[]
+        int count = 0;
+        foreach (var key in RegistryConstants.KeysToDelete)
         {
-            @"HKCU\Software\Policies\Microsoft\Windows\Network Connections",
-            @"HKLM\Software\Policies\Microsoft\Windows\Network Connections",
-            @"HKCU\Software\Policies\Microsoft\Internet Explorer\Control Panel",
-            @"HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Network",
-            @"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\Network",
-        };
-
-        foreach (var key in keysToDelete)
-        {
-            if (DeleteRegistry(key)) unlockedCount++;
+            if (DeleteRegistryKey(key))
+                count++;
         }
+        return count;
+    }
 
-        // 3. Перезапуск сетевых служб
+    /// <summary>Перезапускает сетевые службы</summary>
+    private static void RestartNetworkServices()
+    {
         Console.WriteLine();
         ConsoleUI.Log("Перезапускаем сетевые службы...", true);
-        foreach (var svc in new[] { "netprofm", "NlaSvc", "Dhcp", "Dnscache" })
-            RestartService(svc);
 
-        // 4. Сброс сетевых настроек
+        foreach (var service in AppConstants.NetworkServices)
+        {
+            RestartService(service);
+        }
+    }
+
+    /// <summary>Сбрасывает сетевые настройки</summary>
+    private static void ResetNetworkSettings()
+    {
         Console.WriteLine();
         ConsoleUI.Log("Сбрасываем сетевые настройки...", true);
-        RunSilent("ipconfig", "/release");
-        RunSilent("ipconfig", "/renew");
-        RunSilent("ipconfig", "/flushdns");
-        RunSilent("netsh", "winsock reset");
-        RunSilent("netsh", "int ip reset");
 
-        // 5. Включение сетевых адаптеров
+        RunSilentWithArgs("ipconfig", new[] { "/release" });
+        RunSilentWithArgs("ipconfig", new[] { "/renew" });
+        RunSilentWithArgs("ipconfig", new[] { "/flushdns" });
+        RunSilentWithArgs("netsh", new[] { "winsock", "reset" });
+        RunSilentWithArgs("netsh", new[] { "int", "ip", "reset" });
+    }
+
+    /// <summary>Включает отключенные сетевые адаптеры</summary>
+    private static void EnableNetworkAdapters()
+    {
         Console.WriteLine();
         ConsoleUI.Log("Проверяем сетевые адаптеры...", true);
-        RunSilent("powershell", "-Command \"Get-NetAdapter -Physical | Where-Object {$_.Status -eq 'Disabled'} | Enable-NetAdapter -Confirm:$false\"", 15000);
-        ConsoleUI.Log("  + Сетевые адаптеры проверены", true);
 
-        // 6. Открываем параметры сети
+        RunSilent("powershell", "-Command \"Get-NetAdapter -Physical | Where-Object {$_.Status -eq 'Disabled'} | Enable-NetAdapter -Confirm:$false\"", AppConstants.PowerShellTimeout);
+        ConsoleUI.Log("  + Сетевые адаптеры проверены", true);
+    }
+
+    /// <summary>Открывает параметры сети в Windows Settings</summary>
+    private static void OpenNetworkSettings()
+    {
         Console.WriteLine();
         ConsoleUI.Log("Открываем параметры сети...", true);
         RunSilent("cmd", "/c start ms-settings:network");
+    }
 
-        // Итог
+    /// <summary>Выводит результат разблокировки</summary>
+    private static void PrintUnlockResult(int unlockedCount)
+    {
         Console.WriteLine();
         if (unlockedCount > 0)
         {
@@ -196,28 +173,41 @@ public static class ExtraMenu
         {
             Console.WriteLine($"{ConsoleUI.ColorGreen}+ Блокировки не найдены, сеть уже разблокирована{ConsoleUI.ColorReset}");
         }
-        ConsoleUI.Pause();
     }
 
-    private static bool RunRegCommand(string args)
+    // ═══════════════════════════════════════════════════════════════
+    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Удаляет ключ реестра целиком</summary>
+    private static bool RunRegDelete(string key)
     {
         try
         {
-            using var p = Process.Start(new ProcessStartInfo
+            var psi = new ProcessStartInfo
             {
                 FileName = "reg",
-                Arguments = args,
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardError = true
-            });
+            };
+            psi.ArgumentList.Add("delete");
+            psi.ArgumentList.Add(key);
+            psi.ArgumentList.Add("/f");
+
+            using var p = Process.Start(psi);
             p?.WaitForExit();
             return p?.ExitCode == 0;
         }
-        catch { return false; }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"RunRegDelete error for {key}: {ex.Message}");
+            return false;
+        }
     }
 
-    private static bool DeleteRegistry(string key, string? value = null)
+    /// <summary>Удаляет конкретное значение из ключа реестра</summary>
+    private static bool DeleteRegistryValue(string key, string value)
     {
         try
         {
@@ -231,11 +221,8 @@ public static class ExtraMenu
             };
             psi.ArgumentList.Add("delete");
             psi.ArgumentList.Add(key);
-            if (value != null)
-            {
-                psi.ArgumentList.Add("/v");
-                psi.ArgumentList.Add(value);
-            }
+            psi.ArgumentList.Add("/v");
+            psi.ArgumentList.Add(value);
             psi.ArgumentList.Add("/f");
 
             using var p = Process.Start(psi);
@@ -244,27 +231,102 @@ public static class ExtraMenu
             if (p?.ExitCode == 0)
             {
                 string loc = key.StartsWith("HKCU") ? "HKCU" : "HKLM";
-                ConsoleUI.Log(value != null ? $"  + Удалено: {value} ({loc})" : $"  + Удалена ветка: {key}", true);
+                ConsoleUI.Log($"  + Удалено: {value} ({loc})", true);
                 return true;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"DeleteRegistryValue error for {key}\\{value}: {ex.Message}");
+        }
         return false;
     }
 
+    /// <summary>Удаляет ветку реестра целиком</summary>
+    private static bool DeleteRegistryKey(string key)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "reg",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            psi.ArgumentList.Add("delete");
+            psi.ArgumentList.Add(key);
+            psi.ArgumentList.Add("/f");
+
+            using var p = Process.Start(psi);
+            p?.WaitForExit();
+
+            if (p?.ExitCode == 0)
+            {
+                ConsoleUI.Log($"  + Удалена ветка: {key}", true);
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"DeleteRegistryKey error for {key}: {ex.Message}");
+        }
+        return false;
+    }
+
+    /// <summary>Перезапускает службу Windows</summary>
     private static void RestartService(string name)
     {
         try
         {
-            RunSilent("net", $"stop {name}", 5000);
-            if (RunSilent("net", $"start {name}", 5000))
+            RunSilentWithArgs("net", new[] { "stop", name }, AppConstants.ServiceTimeout);
+            if (RunSilentWithArgs("net", new[] { "start", name }, AppConstants.ServiceTimeout))
                 ConsoleUI.Log($"  + Перезапущена служба: {name}", true);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"RestartService error for {name}: {ex.Message}");
+        }
     }
 
-    private static bool RunSilent(string cmd, string args, int timeout = 10000)
+    /// <summary>Запускает команду без окна с использованием ArgumentList (безопасно)</summary>
+    private static bool RunSilentWithArgs(string cmd, string[] args, int timeout = 0)
     {
+        if (timeout == 0)
+            timeout = AppConstants.DefaultProcessTimeout;
+
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = cmd,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            foreach (var arg in args)
+                psi.ArgumentList.Add(arg);
+
+            using var p = Process.Start(psi);
+            p?.WaitForExit(timeout);
+            return p?.ExitCode == 0;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"RunSilentWithArgs error for {cmd}: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Запускает команду без окна (для строковых аргументов)</summary>
+    private static bool RunSilent(string cmd, string args, int timeout = 0)
+    {
+        if (timeout == 0)
+            timeout = AppConstants.DefaultProcessTimeout;
+
         try
         {
             using var p = Process.Start(new ProcessStartInfo
@@ -279,6 +341,10 @@ public static class ExtraMenu
             p?.WaitForExit(timeout);
             return p?.ExitCode == 0;
         }
-        catch { return false; }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"RunSilent error for {cmd} {args}: {ex.Message}");
+            return false;
+        }
     }
 }

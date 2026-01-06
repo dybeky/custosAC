@@ -1,14 +1,10 @@
+using CustosAC.Constants;
 using CustosAC.UI;
 
 namespace CustosAC.Scanner;
 
 public static class SystemScanner
 {
-    // Константы глубины сканирования для разных типов папок
-    private const int WindowsScanDepth = 2;      // Системная папка - неглубокое сканирование
-    private const int ProgramFilesScanDepth = 3; // Программы - среднее сканирование
-    private const int UserFoldersScanDepth = 5;  // Пользовательские папки - глубокое сканирование
-
     public static void ScanSystemFolders()
     {
         ConsoleUI.PrintHeader();
@@ -18,14 +14,14 @@ public static class SystemScanner
 
         var folders = new[]
         {
-            (path: @"C:\Windows", name: @"C:\Windows", maxDepth: WindowsScanDepth),
-            (path: @"C:\Program Files (x86)", name: @"C:\Program Files (x86)", maxDepth: ProgramFilesScanDepth),
-            (path: @"C:\Program Files", name: @"C:\Program Files", maxDepth: ProgramFilesScanDepth),
-            (path: Path.Combine(userprofile, "Downloads"), name: "Downloads", maxDepth: UserFoldersScanDepth),
-            (path: Path.Combine(userprofile, "OneDrive"), name: "OneDrive", maxDepth: UserFoldersScanDepth)
+            (path: AppConstants.WindowsPath, name: AppConstants.WindowsPath, maxDepth: AppConstants.WindowsScanDepth),
+            (path: AppConstants.ProgramFilesX86, name: AppConstants.ProgramFilesX86, maxDepth: AppConstants.ProgramFilesScanDepth),
+            (path: AppConstants.ProgramFiles, name: AppConstants.ProgramFiles, maxDepth: AppConstants.ProgramFilesScanDepth),
+            (path: Path.Combine(userprofile, "Downloads"), name: "Downloads", maxDepth: AppConstants.UserFoldersScanDepth),
+            (path: Path.Combine(userprofile, "OneDrive"), name: "OneDrive", maxDepth: AppConstants.UserFoldersScanDepth)
         };
 
-        var extensions = new[] { ".exe", ".dll" };
+        var extensions = AppConstants.ExecutableExtensions;
 
         ConsoleUI.Log("Начинается сканирование системных папок...", true);
         Console.WriteLine($"{ConsoleUI.Warning} {ConsoleUI.ColorYellow}Это может занять некоторое время...{ConsoleUI.ColorReset}\n");

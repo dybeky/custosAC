@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using CustosAC.Constants;
 using CustosAC.Keywords;
 using CustosAC.UI;
 using CustosAC.WinAPI;
@@ -19,6 +20,10 @@ public static class Common
         ".git",
         "node_modules"
     };
+
+    // ═══════════════════════════════════════════════════════════════
+    // РАБОТА С ПАПКАМИ И КОМАНДАМИ
+    // ═══════════════════════════════════════════════════════════════
 
     public static bool OpenFolder(string path, string desc)
     {
@@ -63,6 +68,10 @@ public static class Common
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // КОПИРОВАНИЕ В БУФЕР
+    // ═══════════════════════════════════════════════════════════════
+
     public static void CopyKeywordsToClipboard()
     {
         try
@@ -77,20 +86,37 @@ public static class Common
         }
     }
 
+    /// <summary>Копирует текст в буфер обмена</summary>
+    public static void CopyToClipboard(string text)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "clip",
+            RedirectStandardInput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = Process.Start(psi);
+        if (process is null) return;
+
+        process.StandardInput.Write(text);
+        process.StandardInput.Close();
+        process.WaitForExit();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ПРОВЕРКА САЙТОВ
+    // ═══════════════════════════════════════════════════════════════
+
     public static void CheckWebsites()
     {
         ConsoleUI.PrintHeader();
         Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ ПРОВЕРКА САЙТОВ ═══{ConsoleUI.ColorReset}\n");
 
-        var websites = new[]
-        {
-            ("https://oplata.info", "Oplata.info"),
-            ("https://funpay.com", "FunPay.com")
-        };
-
         Console.WriteLine($"  {ConsoleUI.ColorBlue}[i]{ConsoleUI.ColorReset} Открываем сайты для проверки доступности...\n");
 
-        foreach (var (url, name) in websites)
+        foreach (var (url, name) in AppConstants.WebsitesToCheck)
         {
             if (RunCommand(url, name))
             {
@@ -110,6 +136,10 @@ public static class Common
 
         ConsoleUI.Pause();
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // РАБОТА С РЕЕСТРОМ
+    // ═══════════════════════════════════════════════════════════════
 
     public static bool OpenRegistry(string path)
     {
@@ -132,41 +162,18 @@ public static class Common
         }
     }
 
-    /// <summary>
-    /// Копирует текст в буфер обмена
-    /// </summary>
-    public static void CopyToClipboard(string text)
-    {
-        var psi = new ProcessStartInfo
-        {
-            FileName = "clip",
-            RedirectStandardInput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        using var process = Process.Start(psi);
-        if (process != null)
-        {
-            process.StandardInput.Write(text);
-            process.StandardInput.Close();
-            process.WaitForExit();
-        }
-    }
+    // ═══════════════════════════════════════════════════════════════
+    // ПРОВЕРКА TELEGRAM
+    // ═══════════════════════════════════════════════════════════════
 
     public static void CheckTelegram()
     {
         ConsoleUI.PrintHeader();
         Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ ПРОВЕРКА TELEGRAM ═══{ConsoleUI.ColorReset}\n");
 
-        var bots = new[]
-        {
-            ("@MelonySolutionBot", "Melony Solution Bot"),
-            ("@UndeadSellerBot", "Undead Seller Bot")
-        };
-
         Console.WriteLine($"  {ConsoleUI.ColorBlue}[i]{ConsoleUI.ColorReset} Открываем Telegram ботов для проверки...\n");
 
-        foreach (var (username, name) in bots)
+        foreach (var (username, name) in AppConstants.TelegramBots)
         {
             var telegramUrl = $"tg://resolve?domain={username.TrimStart('@')}";
             if (RunCommand(telegramUrl, name))
@@ -230,6 +237,10 @@ public static class Common
 
         ConsoleUI.Pause();
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // СКАНИРОВАНИЕ ПАПОК
+    // ═══════════════════════════════════════════════════════════════
 
     public static List<string> ScanFolderOptimized(string path, string[] extensions, int maxDepth, int currentDepth = 0)
     {
@@ -303,29 +314,41 @@ public static class Common
         return results;
     }
 
-    /// <summary>
-    /// Запускает процесс с отслеживанием для автоматического закрытия при выходе
-    /// </summary>
+    // ═══════════════════════════════════════════════════════════════
+    // ОТСЛЕЖИВАНИЕ ПРОЦЕССОВ
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Запускает процесс с отслеживанием для автоматического закрытия при выходе</summary>
     private static void StartTrackedProcess(ProcessStartInfo psi, string? logMessage = null)
     {
         var process = Process.Start(psi);
-        if (process != null)
+        if (process is null)
         {
-            AdminHelper.TrackProcess(process);
-            Task.Run(() =>
-            {
-                try { process.WaitForExit(); }
-                catch (InvalidOperationException) { }
-                finally { AdminHelper.UntrackProcess(process); }
-            });
+            if (logMessage != null)
+                ConsoleUI.Log($"Не удалось запустить: {logMessage}", false);
+            return;
         }
+
+        AdminHelper.TrackProcess(process);
+        _ = Task.Run(() =>
+        {
+            try { process.WaitForExit(); }
+            catch (InvalidOperationException)
+            {
+                // Процесс уже завершён
+            }
+            finally { AdminHelper.UntrackProcess(process); }
+        });
+
         if (logMessage != null)
             ConsoleUI.Log(logMessage, true);
     }
 
-    /// <summary>
-    /// Отображает результаты сканирования с пагинацией
-    /// </summary>
+    // ═══════════════════════════════════════════════════════════════
+    // ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>Отображает результаты сканирования с пагинацией</summary>
     public static void DisplayScanResults(List<string> results, string itemName = "файлов")
     {
         if (results.Count > 0)
@@ -338,7 +361,7 @@ public static class Common
             var choice = Console.ReadLine()?.ToLower().Trim();
             if (choice == "v")
             {
-                ConsoleUI.DisplayFilesWithPagination(results, 25);
+                ConsoleUI.DisplayFilesWithPagination(results, AppConstants.ItemsPerPage);
             }
         }
         else

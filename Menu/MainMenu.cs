@@ -1,3 +1,4 @@
+using CustosAC.Constants;
 using CustosAC.UI;
 using CustosAC.WinAPI;
 
@@ -27,10 +28,10 @@ public static class MainMenu
                     Console.WriteLine($"  {ConsoleUI.ColorOrange}╔════════════════════════════════════════════╗{ConsoleUI.ColorReset}");
                     Console.WriteLine($"  {ConsoleUI.ColorOrange}║     + Закрываем открытые процессы... +     ║{ConsoleUI.ColorReset}");
                     Console.WriteLine($"  {ConsoleUI.ColorOrange}╚════════════════════════════════════════════╝{ConsoleUI.ColorReset}");
-                    Thread.Sleep(800);
+                    Thread.Sleep(AppConstants.ExitDelay);
                     AdminHelper.KillAllProcesses();
                     ConsoleUI.PrintCleanupMessage();
-                    Thread.Sleep(1500);
+                    Thread.Sleep(AppConstants.CleanupDelay);
                     return;
                 case 1:
                     ManualMenu.Run();

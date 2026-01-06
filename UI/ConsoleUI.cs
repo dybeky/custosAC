@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using CustosAC.Constants;
 
 namespace CustosAC.UI;
 
@@ -53,7 +54,7 @@ public static class ConsoleUI
             var psi = new ProcessStartInfo
             {
                 FileName = "cmd",
-                Arguments = "/c mode con: cols=120 lines=40",
+                Arguments = $"/c mode con: cols={AppConstants.ConsoleWidth} lines={AppConstants.ConsoleHeight}",
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
@@ -125,8 +126,7 @@ public static class ConsoleUI
     public static void PrintMenu(string title, string[] options, bool showBack)
     {
         // Добавляем отступ для заголовка (не полный центр, а ближе к меню)
-        int padding = 10; // Фиксированный отступ
-        string centeredTitle = new string(' ', padding) + title;
+        string centeredTitle = new string(' ', AppConstants.MenuPadding) + title;
 
         Console.WriteLine($"\n{ColorYellow}{ColorBold}{centeredTitle}{ColorReset}\n");
 
@@ -244,7 +244,7 @@ public static class ConsoleUI
                     else
                     {
                         Console.WriteLine($"{Warning} {ColorYellow}Это последняя страница{ColorReset}");
-                        Thread.Sleep(500);
+                        Thread.Sleep(AppConstants.UiDelay);
                     }
                     break;
                 case "p":
@@ -255,7 +255,7 @@ public static class ConsoleUI
                     else
                     {
                         Console.WriteLine($"{Warning} {ColorYellow}Это первая страница{ColorReset}");
-                        Thread.Sleep(500);
+                        Thread.Sleep(AppConstants.UiDelay);
                     }
                     break;
                 case "0":
@@ -264,7 +264,7 @@ public static class ConsoleUI
                     return;
                 default:
                     Console.WriteLine($"{Error} {ColorRed}Неверная команда{ColorReset}");
-                    Thread.Sleep(500);
+                    Thread.Sleep(AppConstants.UiDelay);
                     break;
             }
         }

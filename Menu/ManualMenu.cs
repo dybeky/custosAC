@@ -1,3 +1,4 @@
+using CustosAC.Constants;
 using CustosAC.Helpers;
 using CustosAC.Scanner;
 using CustosAC.UI;
@@ -159,7 +160,7 @@ public static class ManualMenu
                     ConsoleUI.Pause();
                     break;
                 case 5:
-                    Common.OpenFolder(@"C:\Windows\Prefetch", "Prefetch");
+                    Common.OpenFolder(AppConstants.PrefetchPath, "Prefetch");
                     ConsoleUI.Pause();
                     break;
                 case 6:
@@ -167,7 +168,7 @@ public static class ManualMenu
                     Common.OpenFolder(localappdata, "Local");
                     Common.OpenFolder(Path.Combine(userprofile, "AppData", "LocalLow"), "LocalLow");
                     Common.OpenFolder(Path.Combine(userprofile, "Videos"), "Videos");
-                    Common.OpenFolder(@"C:\Windows\Prefetch", "Prefetch");
+                    Common.OpenFolder(AppConstants.PrefetchPath, "Prefetch");
                     ConsoleUI.Pause();
                     break;
             }
@@ -198,13 +199,13 @@ public static class ManualMenu
                     Common.RunCommand("regedit.exe", "Regedit открыт");
                     break;
                 case 2:
-                    Common.OpenRegistry(@"HKEY_CURRENT_USER\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache");
+                    Common.OpenRegistry(RegistryConstants.MuiCachePath);
                     break;
                 case 3:
-                    Common.OpenRegistry(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched");
+                    Common.OpenRegistry(RegistryConstants.AppSwitchedPath);
                     break;
                 case 4:
-                    Common.OpenRegistry(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView");
+                    Common.OpenRegistry(RegistryConstants.ShowJumpViewPath);
                     break;
             }
             ConsoleUI.Pause();

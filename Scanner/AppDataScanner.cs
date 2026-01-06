@@ -1,3 +1,4 @@
+using CustosAC.Constants;
 using CustosAC.UI;
 
 namespace CustosAC.Scanner;
@@ -21,8 +22,6 @@ public static class AppDataScanner
             (path: locallow, name: "AppData\\LocalLow")
         };
 
-        var extensions = new[] { ".exe", ".dll" };
-
         ConsoleUI.Log("Начинается сканирование AppData...", true);
         Console.WriteLine();
 
@@ -40,7 +39,7 @@ public static class AppDataScanner
             Console.WriteLine($"{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}[СКАНИРОВАНИЕ {i + 1}/{folders.Length}]{ConsoleUI.ColorReset} {ConsoleUI.ColorCyan}{folder.name}{ConsoleUI.ColorReset}");
             Console.WriteLine($"{ConsoleUI.ColorBlue}Путь: {folder.path}{ConsoleUI.ColorReset}\n");
 
-            var results = Common.ScanFolderOptimized(folder.path, extensions, 10);
+            var results = Common.ScanFolderOptimized(folder.path, AppConstants.ExecutableExtensions, AppConstants.AppDataScanDepth);
 
             if (results.Count > 0)
             {

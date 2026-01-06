@@ -1,3 +1,4 @@
+using CustosAC.Constants;
 using CustosAC.Keywords;
 using CustosAC.UI;
 
@@ -10,9 +11,7 @@ public static class PrefetchScanner
         ConsoleUI.PrintHeader();
         Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ АВТОМАТИЧЕСКОЕ СКАНИРОВАНИЕ PREFETCH ═══{ConsoleUI.ColorReset}\n");
 
-        var prefetchPath = @"C:\Windows\Prefetch";
-
-        if (!Directory.Exists(prefetchPath))
+        if (!Directory.Exists(AppConstants.PrefetchPath))
         {
             ConsoleUI.Log("Папка Prefetch не найдена или недоступна", false);
             ConsoleUI.Pause();
@@ -26,7 +25,7 @@ public static class PrefetchScanner
 
         try
         {
-            var files = Directory.GetFiles(prefetchPath);
+            var files = Directory.GetFiles(AppConstants.PrefetchPath);
 
             foreach (var file in files)
             {

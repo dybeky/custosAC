@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using CustosAC.Constants;
 using CustosAC.Keywords;
 using CustosAC.UI;
 
@@ -11,13 +12,6 @@ public static class RegistryScanner
         ConsoleUI.PrintHeader();
         Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ ПОИСК В РЕЕСТРЕ ПО КЛЮЧЕВЫМ СЛОВАМ ═══{ConsoleUI.ColorReset}\n");
 
-        var registryKeys = new[]
-        {
-            (path: @"HKEY_CURRENT_USER\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache", name: "MuiCache"),
-            (path: @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched", name: "AppSwitched"),
-            (path: @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView", name: "ShowJumpView")
-        };
-
         ConsoleUI.Log("Начинается поиск в реестре...", true);
         Console.WriteLine($"{ConsoleUI.Warning} {ConsoleUI.ColorYellow}Для поиска используется временный экспорт{ConsoleUI.ColorReset}\n");
 
@@ -28,25 +22,25 @@ public static class RegistryScanner
         {
             Directory.CreateDirectory(tempDir);
         }
-        catch
+        catch (Exception ex)
         {
-            ConsoleUI.Log("Не удалось создать временную папку", false);
+            ConsoleUI.Log($"Не удалось создать временную папку: {ex.Message}", false);
             ConsoleUI.Pause();
             return;
         }
 
         try
         {
-            for (int i = 0; i < registryKeys.Length; i++)
+            for (int i = 0; i < RegistryConstants.ScanKeys.Length; i++)
             {
-                var regKey = registryKeys[i];
+                var regKey = RegistryConstants.ScanKeys[i];
 
                 if (i > 0)
                 {
                     Console.WriteLine($"{ConsoleUI.ColorCyan}{ConsoleUI.SeparatorMedium}{ConsoleUI.ColorReset}");
                 }
 
-                Console.WriteLine($"\n{ConsoleUI.ColorYellow}[СКАНИРОВАНИЕ {i + 1}/{registryKeys.Length}]{ConsoleUI.ColorReset} {regKey.name}");
+                Console.WriteLine($"\n{ConsoleUI.ColorYellow}[СКАНИРОВАНИЕ {i + 1}/{RegistryConstants.ScanKeys.Length}]{ConsoleUI.ColorReset} {regKey.name}");
                 Console.WriteLine($"{ConsoleUI.ColorBlue}Путь: {regKey.path}{ConsoleUI.ColorReset}\n");
 
                 var outputFile = Path.Combine(tempDir, regKey.name + ".reg");
