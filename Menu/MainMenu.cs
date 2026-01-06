@@ -14,11 +14,10 @@ public static class MainMenu
             {
                 "Ручная проверка",
                 "Автоматическая проверка",
-                "Расширенная проверка",
                 "Экстра"
             }, false);
 
-            int choice = ConsoleUI.GetChoice(4);
+            int choice = ConsoleUI.GetChoice(3);
 
             switch (choice)
             {
@@ -40,9 +39,6 @@ public static class MainMenu
                     AutoMenu.Run();
                     break;
                 case 3:
-                    AdvancedMenu.Run();
-                    break;
-                case 4:
                     ExtraMenu.Run();
                     break;
             }
