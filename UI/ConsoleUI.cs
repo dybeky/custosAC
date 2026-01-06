@@ -30,6 +30,7 @@ public static class ConsoleUI
     public const string ColorWhite = "\x1b[37m";
     public const string ColorOrange = "\x1b[38;5;208m";
     public const string ColorBold = "\x1b[1m";
+    public const string ColorDim = "\x1b[2m";
 
     // Префиксы для логов и сообщений
     public static string Success => $"{ColorGreen}[+]{ColorReset}";
@@ -129,9 +130,19 @@ public static class ConsoleUI
 
         Console.WriteLine($"\n{ColorYellow}{ColorBold}{centeredTitle}{ColorReset}\n");
 
+        int menuNumber = 1;
         for (int i = 0; i < options.Length; i++)
         {
-            Console.WriteLine($"  {ColorCyan}{ColorBold}[{i + 1}]{ColorReset} {Arrow} {options[i]}");
+            // Разделители выводим без номера
+            if (options[i].Contains("────"))
+            {
+                Console.WriteLine($"      {ColorDim}{options[i]}{ColorReset}");
+            }
+            else
+            {
+                Console.WriteLine($"  {ColorCyan}{ColorBold}[{menuNumber}]{ColorReset} {Arrow} {options[i]}");
+                menuNumber++;
+            }
         }
 
         if (showBack)

@@ -20,7 +20,7 @@ if exist obj rmdir /s /q obj
 if exist publish rmdir /s /q publish
 
 echo [2/2] Сборка...
-dotnet publish -c Release -o publish
+dotnet publish CustosAC.csproj -c Release -o publish
 
 if %errorlevel% neq 0 (
     echo [ОШИБКА] Сборка не удалась!

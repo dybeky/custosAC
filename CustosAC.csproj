@@ -9,12 +9,26 @@
     <ApplicationIcon>custosACicon.ico</ApplicationIcon>
     <AssemblyName>CustosAC</AssemblyName>
 
-    <!-- Один EXE файл -->
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- Для P/Invoke и низкоуровневого доступа -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Output в папку publish -->
+    <OutputPath>publish\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
   </PropertyGroup>
+
+  <!-- Копирование базы сигнатур -->
+  <ItemGroup>
+    <None Update="Data\signatures.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Необходимые пакеты -->
+  <ItemGroup>
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.0" />
+  </ItemGroup>
 
 </Project>
