@@ -1,18 +1,49 @@
-using CustosAC.Constants;
-using CustosAC.Helpers;
-using CustosAC.Scanner;
-using CustosAC.UI;
+using CustosAC.Abstractions;
+using CustosAC.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace CustosAC.Menu;
 
-public static class ManualMenu
+/// <summary>
+/// Меню ручной проверки с DI
+/// </summary>
+public class ManualMenu
 {
-    public static void Run()
+    private readonly IConsoleUI _consoleUI;
+    private readonly IProcessService _processService;
+    private readonly IKeywordMatcher _keywordMatcher;
+    private readonly IRegistryService _registryService;
+    private readonly IScannerFactory _scannerFactory;
+    private readonly PathSettings _pathSettings;
+    private readonly RegistrySettings _registrySettings;
+    private readonly ExternalResourceSettings _externalSettings;
+
+    public ManualMenu(
+        IConsoleUI consoleUI,
+        IProcessService processService,
+        IKeywordMatcher keywordMatcher,
+        IRegistryService registryService,
+        IScannerFactory scannerFactory,
+        IOptions<PathSettings> pathSettings,
+        IOptions<RegistrySettings> registrySettings,
+        IOptions<ExternalResourceSettings> externalSettings)
+    {
+        _consoleUI = consoleUI;
+        _processService = processService;
+        _keywordMatcher = keywordMatcher;
+        _registryService = registryService;
+        _scannerFactory = scannerFactory;
+        _pathSettings = pathSettings.Value;
+        _registrySettings = registrySettings.Value;
+        _externalSettings = externalSettings.Value;
+    }
+
+    public async Task RunAsync()
     {
         while (true)
         {
-            ConsoleUI.PrintHeader();
-            ConsoleUI.PrintMenu("РУЧНАЯ ПРОВЕРКА", new[]
+            _consoleUI.PrintHeader();
+            _consoleUI.PrintMenu("РУЧНАЯ ПРОВЕРКА", new[]
             {
                 "Сеть и интернет",
                 "Защита Windows",
@@ -26,102 +57,106 @@ public static class ManualMenu
                 "Скопировать ключевые слова"
             }, true);
 
-            int choice = ConsoleUI.GetChoice(10);
+            int choice = _consoleUI.GetChoice(10);
 
             switch (choice)
             {
                 case 0:
                     return;
                 case 1:
-                    NetworkMenu();
+                    await NetworkMenuAsync();
                     break;
                 case 2:
-                    DefenderMenu();
+                    await DefenderMenuAsync();
                     break;
                 case 3:
-                    UtilitiesMenu();
+                    await UtilitiesMenuAsync();
                     break;
                 case 4:
-                    FoldersMenu();
+                    await FoldersMenuAsync();
                     break;
                 case 5:
-                    RegistryMenu();
+                    await RegistryMenuAsync();
                     break;
                 case 6:
-                    SteamCheckMenu();
+                    await SteamCheckMenuAsync();
                     break;
                 case 7:
-                    UnturnedMenu();
+                    await UnturnedMenuAsync();
                     break;
                 case 8:
-                    Common.CheckWebsites();
+                    await CheckWebsitesAsync();
                     break;
                 case 9:
-                    Common.CheckTelegram();
+                    await CheckTelegramAsync();
                     break;
                 case 10:
-                    ConsoleUI.PrintHeader();
-                    Common.CopyKeywordsToClipboard();
-                    ConsoleUI.Pause();
+                    CopyKeywordsToClipboard();
                     break;
             }
         }
     }
 
-    private static void NetworkMenu()
+    private async Task NetworkMenuAsync()
     {
-        ConsoleUI.PrintHeader();
-        Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ СЕТЬ И ИНТЕРНЕТ ═══{ConsoleUI.ColorReset}\n");
+        _consoleUI.PrintHeader();
+        Console.WriteLine("\n\x1b[36m\x1b[1m═══ СЕТЬ И ИНТЕРНЕТ ═══\x1b[0m\n");
 
-        Common.RunCommand("ms-settings:datausage", "Использование данных");
+        await _processService.OpenUrlAsync("ms-settings:datausage");
 
-        Console.WriteLine($"\n{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}ЧТО НУЖНО ПРОВЕРИТЬ:{ConsoleUI.ColorReset}");
-        Console.WriteLine($"  {ConsoleUI.Arrow} Неизвестные .exe файлы с сетевой активностью");
-        Console.WriteLine($"  {ConsoleUI.Arrow} Подозрительные названия процессов");
-        Console.WriteLine($"  {ConsoleUI.Arrow} Большой объем переданных данных");
-        ConsoleUI.Pause();
+        Console.WriteLine("\n\x1b[33m\x1b[1mЧТО НУЖНО ПРОВЕРИТЬ:\x1b[0m");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Неизвестные .exe файлы с сетевой активностью");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Подозрительные названия процессов");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Большой объем переданных данных");
+        _consoleUI.Pause();
     }
 
-    private static void DefenderMenu()
+    private async Task DefenderMenuAsync()
     {
-        ConsoleUI.PrintHeader();
-        Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ ЗАЩИТА WINDOWS ═══{ConsoleUI.ColorReset}\n");
+        _consoleUI.PrintHeader();
+        Console.WriteLine("\n\x1b[36m\x1b[1m═══ ЗАЩИТА WINDOWS ═══\x1b[0m\n");
 
-        Common.RunCommand("windowsdefender://threat/", "Журнал защиты Windows Defender");
+        await _processService.OpenUrlAsync("windowsdefender://threat/");
 
-        Console.WriteLine($"\n{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}КЛЮЧЕВЫЕ СЛОВА ДЛЯ ПОИСКА:{ConsoleUI.ColorReset}");
-        Console.WriteLine($"  {ConsoleUI.Arrow} undead, melony, ancient, loader, xnor");
-        Console.WriteLine($"  {ConsoleUI.Arrow} hack, cheat, unturned, bypass");
-        Console.WriteLine($"  {ConsoleUI.Arrow} inject, overlay, esp, aimbot");
-        ConsoleUI.Pause();
+        Console.WriteLine("\n\x1b[33m\x1b[1mКЛЮЧЕВЫЕ СЛОВА ДЛЯ ПОИСКА:\x1b[0m");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m undead, melony, ancient, loader, xnor");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m hack, cheat, unturned, bypass");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m inject, overlay, esp, aimbot");
+        _consoleUI.Pause();
     }
 
-    private static void UtilitiesMenu()
+    private async Task UtilitiesMenuAsync()
     {
-        ConsoleUI.PrintHeader();
-        Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ УТИЛИТЫ ═══{ConsoleUI.ColorReset}\n");
+        _consoleUI.PrintHeader();
+        Console.WriteLine("\n\x1b[36m\x1b[1m═══ УТИЛИТЫ ═══\x1b[0m\n");
+        Console.WriteLine("  \x1b[34m[i]\x1b[0m Открываем ссылки на утилиты для проверки...\n");
 
-        Console.WriteLine($"  {ConsoleUI.Info} Открываем ссылки на утилиты для проверки...\n");
+        await _processService.OpenUrlAsync("https://www.voidtools.com/downloads/");
+        _consoleUI.Log("Everything (поиск файлов)", true);
 
-        Common.RunCommand("https://www.voidtools.com/downloads/", "Everything (поиск файлов)");
-        Common.RunCommand("https://www.nirsoft.net/utils/computer_activity_view.html", "ComputerActivityView");
-        Common.RunCommand("https://www.nirsoft.net/utils/usb_devices_view.html", "USBDevicesView");
-        Common.RunCommand("https://privazer.com/en/download-shellbag-analyzer-shellbag-cleaner.php", "ShellBag Analyzer");
+        await _processService.OpenUrlAsync("https://www.nirsoft.net/utils/computer_activity_view.html");
+        _consoleUI.Log("ComputerActivityView", true);
 
-        Console.WriteLine($"\n{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}УТИЛИТЫ:{ConsoleUI.ColorReset}");
-        Console.WriteLine($"  {ConsoleUI.Arrow} Everything - быстрый поиск файлов на ПК");
-        Console.WriteLine($"  {ConsoleUI.Arrow} ComputerActivityView - активность компьютера");
-        Console.WriteLine($"  {ConsoleUI.Arrow} USBDevicesView - история USB устройств");
-        Console.WriteLine($"  {ConsoleUI.Arrow} ShellBag Analyzer - анализ посещенных папок");
-        ConsoleUI.Pause();
+        await _processService.OpenUrlAsync("https://www.nirsoft.net/utils/usb_devices_view.html");
+        _consoleUI.Log("USBDevicesView", true);
+
+        await _processService.OpenUrlAsync("https://privazer.com/en/download-shellbag-analyzer-shellbag-cleaner.php");
+        _consoleUI.Log("ShellBag Analyzer", true);
+
+        Console.WriteLine("\n\x1b[33m\x1b[1mУТИЛИТЫ:\x1b[0m");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Everything - быстрый поиск файлов на ПК");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m ComputerActivityView - активность компьютера");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m USBDevicesView - история USB устройств");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m ShellBag Analyzer - анализ посещенных папок");
+        _consoleUI.Pause();
     }
 
-    private static void FoldersMenu()
+    private async Task FoldersMenuAsync()
     {
         while (true)
         {
-            ConsoleUI.PrintHeader();
-            ConsoleUI.PrintMenu("СИСТЕМНЫЕ ПАПКИ", new[]
+            _consoleUI.PrintHeader();
+            _consoleUI.PrintMenu("СИСТЕМНЫЕ ПАПКИ", new[]
             {
                 @"AppData\Roaming",
                 @"AppData\Local",
@@ -131,11 +166,11 @@ public static class ManualMenu
                 "Открыть все"
             }, true);
 
-            int choice = ConsoleUI.GetChoice(6);
+            int choice = _consoleUI.GetChoice(6);
             if (choice == 0)
                 break;
 
-            ConsoleUI.PrintHeader();
+            _consoleUI.PrintHeader();
 
             var appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             var localappdata = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -144,43 +179,38 @@ public static class ManualMenu
             switch (choice)
             {
                 case 1:
-                    Common.OpenFolder(appdata, @"AppData\Roaming");
-                    ConsoleUI.Pause();
+                    await OpenFolderAsync(appdata, @"AppData\Roaming");
                     break;
                 case 2:
-                    Common.OpenFolder(localappdata, @"AppData\Local");
-                    ConsoleUI.Pause();
+                    await OpenFolderAsync(localappdata, @"AppData\Local");
                     break;
                 case 3:
-                    Common.OpenFolder(Path.Combine(userprofile, "AppData", "LocalLow"), @"AppData\LocalLow");
-                    ConsoleUI.Pause();
+                    await OpenFolderAsync(Path.Combine(userprofile, "AppData", "LocalLow"), @"AppData\LocalLow");
                     break;
                 case 4:
-                    Common.OpenFolder(Path.Combine(userprofile, "Videos"), "Videos");
-                    ConsoleUI.Pause();
+                    await OpenFolderAsync(Path.Combine(userprofile, "Videos"), "Videos");
                     break;
                 case 5:
-                    Common.OpenFolder(AppConstants.PrefetchPath, "Prefetch");
-                    ConsoleUI.Pause();
+                    await OpenFolderAsync(_pathSettings.Windows.PrefetchPath, "Prefetch");
                     break;
                 case 6:
-                    Common.OpenFolder(appdata, "Roaming");
-                    Common.OpenFolder(localappdata, "Local");
-                    Common.OpenFolder(Path.Combine(userprofile, "AppData", "LocalLow"), "LocalLow");
-                    Common.OpenFolder(Path.Combine(userprofile, "Videos"), "Videos");
-                    Common.OpenFolder(AppConstants.PrefetchPath, "Prefetch");
-                    ConsoleUI.Pause();
+                    await OpenFolderAsync(appdata, "Roaming");
+                    await OpenFolderAsync(localappdata, "Local");
+                    await OpenFolderAsync(Path.Combine(userprofile, "AppData", "LocalLow"), "LocalLow");
+                    await OpenFolderAsync(Path.Combine(userprofile, "Videos"), "Videos");
+                    await OpenFolderAsync(_pathSettings.Windows.PrefetchPath, "Prefetch");
                     break;
             }
+            _consoleUI.Pause();
         }
     }
 
-    private static void RegistryMenu()
+    private async Task RegistryMenuAsync()
     {
         while (true)
         {
-            ConsoleUI.PrintHeader();
-            ConsoleUI.PrintMenu("РЕЕСТР WINDOWS", new[]
+            _consoleUI.PrintHeader();
+            _consoleUI.PrintMenu("РЕЕСТР WINDOWS", new[]
             {
                 "Открыть regedit",
                 "MuiCache (запущенные программы)",
@@ -188,87 +218,170 @@ public static class ManualMenu
                 "ShowJumpView (JumpList история)"
             }, true);
 
-            int choice = ConsoleUI.GetChoice(4);
+            int choice = _consoleUI.GetChoice(4);
             if (choice == 0)
                 break;
 
-            ConsoleUI.PrintHeader();
+            _consoleUI.PrintHeader();
             switch (choice)
             {
                 case 1:
-                    Common.RunCommand("regedit.exe", "Regedit открыт");
+                    await _processService.OpenUrlAsync("regedit.exe");
+                    _consoleUI.Log("Regedit открыт", true);
                     break;
                 case 2:
-                    Common.OpenRegistry(RegistryConstants.MuiCachePath);
+                    await OpenRegistryAsync(_registrySettings.ScanKeys[0].Path);
                     break;
                 case 3:
-                    Common.OpenRegistry(RegistryConstants.AppSwitchedPath);
+                    await OpenRegistryAsync(_registrySettings.ScanKeys[1].Path);
                     break;
                 case 4:
-                    Common.OpenRegistry(RegistryConstants.ShowJumpViewPath);
+                    await OpenRegistryAsync(_registrySettings.ScanKeys[2].Path);
                     break;
             }
-            ConsoleUI.Pause();
+            _consoleUI.Pause();
         }
     }
 
-    private static void SteamCheckMenu()
+    private async Task SteamCheckMenuAsync()
     {
-        ConsoleUI.PrintHeader();
-        Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ ПРОВЕРКА STEAM АККАУНТОВ ═══{ConsoleUI.ColorReset}\n");
+        _consoleUI.PrintHeader();
+        Console.WriteLine("\n\x1b[36m\x1b[1m═══ ПРОВЕРКА STEAM АККАУНТОВ ═══\x1b[0m\n");
 
-        var vdfPaths = DriveHelper.GetSteamLoginUsersPaths();
-        var vdfPath = DriveHelper.FindFirstExisting(vdfPaths);
+        var scanner = _scannerFactory.CreateSteamScanner();
+        var result = await scanner.ScanAsync();
 
-        if (vdfPath == null)
+        if (result.Success && result.HasFindings)
         {
-            ConsoleUI.Log("Файл loginusers.vdf не найден", false);
-            Console.WriteLine($"\n{ConsoleUI.Warning} {ConsoleUI.ColorYellow}Steam может быть не установлен или находится в нестандартной директории{ConsoleUI.ColorReset}");
-            ConsoleUI.Pause();
-            return;
-        }
-
-        ConsoleUI.Log($"Найден файл: {vdfPath}", true);
-        Console.WriteLine();
-
-        SteamScanner.ParseSteamAccountsFromPath(vdfPath);
-
-        Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.SeparatorShort}{ConsoleUI.ColorReset}");
-
-        Console.WriteLine($"\n{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}ЧТО НУЖНО ПРОВЕРИТЬ:{ConsoleUI.ColorReset}");
-        Console.WriteLine($"  {ConsoleUI.Arrow} Конфигурационные файлы Steam");
-        Console.WriteLine($"  {ConsoleUI.Arrow} Информация об аккаунтах");
-        Console.WriteLine($"  {ConsoleUI.Arrow} Логи и настройки");
-
-        ConsoleUI.Pause();
-    }
-
-    private static void UnturnedMenu()
-    {
-        ConsoleUI.PrintHeader();
-        Console.WriteLine($"\n{ConsoleUI.ColorCyan}{ConsoleUI.ColorBold}═══ UNTURNED ═══{ConsoleUI.ColorReset}\n");
-
-        var possiblePaths = DriveHelper.GetUnturnedScreenshotsPaths();
-        var screenshots = DriveHelper.FindFirstExisting(possiblePaths, isFile: false);
-
-        if (screenshots != null)
-        {
-            Console.WriteLine($"  {ConsoleUI.Info} Найдено: {ConsoleUI.ColorCyan}{screenshots}{ConsoleUI.ColorReset}\n");
-            if (Common.OpenFolder(screenshots, "Папка Screenshots Unturned"))
+            foreach (var finding in result.Findings)
             {
-                Console.WriteLine($"\n{ConsoleUI.ColorYellow}{ConsoleUI.ColorBold}ЧТО НУЖНО ПРОВЕРИТЬ:{ConsoleUI.ColorReset}");
-                Console.WriteLine($"  {ConsoleUI.Arrow} UI читов на скриншотах");
-                Console.WriteLine($"  {ConsoleUI.Arrow} ESP/Wallhack индикаторы");
-                Console.WriteLine($"  {ConsoleUI.Arrow} Overlay меню");
-                Console.WriteLine($"  {ConsoleUI.Arrow} Необычные элементы интерфейса");
+                Console.WriteLine($"  \x1b[36m[>]\x1b[0m {finding}");
             }
+            _consoleUI.Log($"Найдено аккаунтов Steam: {result.Count}", true);
         }
         else
         {
-            ConsoleUI.Log(@"Папка Steam\steamapps\common\Unturned\Screenshots не найдена в системе", false);
-            Console.WriteLine($"\n{ConsoleUI.Warning} {ConsoleUI.ColorYellow}Unturned может быть не установлен или находится в нестандартной директории{ConsoleUI.ColorReset}");
+            _consoleUI.Log("Steam аккаунты не найдены", false);
         }
 
-        ConsoleUI.Pause();
+        Console.WriteLine("\n\x1b[36m─────────────────────────────────────────\x1b[0m");
+        Console.WriteLine("\n\x1b[33m\x1b[1mЧТО НУЖНО ПРОВЕРИТЬ:\x1b[0m");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Конфигурационные файлы Steam");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Информация об аккаунтах");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Логи и настройки");
+        _consoleUI.Pause();
+    }
+
+    private async Task UnturnedMenuAsync()
+    {
+        _consoleUI.PrintHeader();
+        Console.WriteLine("\n\x1b[36m\x1b[1m═══ UNTURNED ═══\x1b[0m\n");
+
+        var screenshotPaths = GetUnturnedScreenshotsPaths();
+        var screenshots = screenshotPaths.FirstOrDefault(Directory.Exists);
+
+        if (screenshots != null)
+        {
+            Console.WriteLine($"  \x1b[34m[i]\x1b[0m Найдено: \x1b[36m{screenshots}\x1b[0m\n");
+            await OpenFolderAsync(screenshots, "Папка Screenshots Unturned");
+
+            Console.WriteLine("\n\x1b[33m\x1b[1mЧТО НУЖНО ПРОВЕРИТЬ:\x1b[0m");
+            Console.WriteLine("  \x1b[36m[>]\x1b[0m UI читов на скриншотах");
+            Console.WriteLine("  \x1b[36m[>]\x1b[0m ESP/Wallhack индикаторы");
+            Console.WriteLine("  \x1b[36m[>]\x1b[0m Overlay меню");
+            Console.WriteLine("  \x1b[36m[>]\x1b[0m Необычные элементы интерфейса");
+        }
+        else
+        {
+            _consoleUI.Log(@"Папка Unturned\Screenshots не найдена", false);
+            Console.WriteLine("\n\x1b[33m[!]\x1b[0m \x1b[33mUnturned может быть не установлен\x1b[0m");
+        }
+
+        _consoleUI.Pause();
+    }
+
+    private async Task CheckWebsitesAsync()
+    {
+        _consoleUI.PrintHeader();
+        Console.WriteLine("\n\x1b[36m\x1b[1m═══ ПРОВЕРКА САЙТОВ ═══\x1b[0m\n");
+        Console.WriteLine("  \x1b[34m[i]\x1b[0m Открываем сайты для проверки доступности...\n");
+
+        foreach (var website in _externalSettings.WebsitesToCheck)
+        {
+            await _processService.OpenUrlAsync(website.Url);
+            _consoleUI.Log($"Открыт: {website.Name}", true);
+        }
+
+        Console.WriteLine("\n\x1b[33m\x1b[1mЧТО ПРОВЕРИТЬ:\x1b[0m");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Доступность сайтов");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Нет ли редиректов на подозрительные домены");
+        _consoleUI.Pause();
+    }
+
+    private async Task CheckTelegramAsync()
+    {
+        _consoleUI.PrintHeader();
+        Console.WriteLine("\n\x1b[36m\x1b[1m═══ ПРОВЕРКА TELEGRAM ═══\x1b[0m\n");
+        Console.WriteLine("  \x1b[34m[i]\x1b[0m Открываем Telegram ботов...\n");
+
+        foreach (var bot in _externalSettings.TelegramBots)
+        {
+            var url = $"tg://resolve?domain={bot.Username.TrimStart('@')}";
+            await _processService.OpenUrlAsync(url);
+            _consoleUI.Log($"Открыт: {bot.Name} ({bot.Username})", true);
+        }
+
+        Console.WriteLine("\n\x1b[33m\x1b[1mЧТО ПРОВЕРИТЬ:\x1b[0m");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Историю переписки с ботами");
+        Console.WriteLine("  \x1b[36m[>]\x1b[0m Загруженные файлы");
+        _consoleUI.Pause();
+    }
+
+    private void CopyKeywordsToClipboard()
+    {
+        _consoleUI.PrintHeader();
+        var keywords = _keywordMatcher.GetKeywordsString();
+        _processService.CopyToClipboardAsync(keywords).Wait();
+        _consoleUI.Log("Ключевые слова скопированы в буфер обмена!", true);
+        Console.WriteLine("\n\x1b[33mТеперь можно вставить (Ctrl+V) в Everything и другие программы\x1b[0m");
+        _consoleUI.Pause();
+    }
+
+    private async Task OpenFolderAsync(string path, string description)
+    {
+        if (Directory.Exists(path))
+        {
+            await _processService.OpenFolderAsync(path);
+            _consoleUI.Log($"Открыто: {description}", true);
+        }
+        else
+        {
+            _consoleUI.Log($"Папка не найдена: {path}", false);
+        }
+    }
+
+    private async Task OpenRegistryAsync(string path)
+    {
+        await _processService.CopyToClipboardAsync(path);
+        await _registryService.OpenRegistryEditorAsync(path);
+        _consoleUI.Log($"Путь скопирован: {path}", true);
+        Console.WriteLine("\x1b[33mВставьте путь в regedit (Ctrl+V)\x1b[0m");
+    }
+
+    private List<string> GetUnturnedScreenshotsPaths()
+    {
+        var paths = new List<string>();
+        var relativePath = _pathSettings.Steam.UnturnedScreenshotsRelativePath;
+
+        paths.Add(Path.Combine(_pathSettings.Windows.ProgramFilesX86, relativePath));
+        paths.Add(Path.Combine(_pathSettings.Windows.ProgramFiles, relativePath));
+
+        foreach (var drive in _pathSettings.Steam.AdditionalDrives)
+        {
+            paths.Add(Path.Combine(drive, relativePath));
+            paths.Add(Path.Combine(drive, "SteamLibrary", "steamapps", "common", "Unturned", "Screenshots"));
+        }
+
+        return paths;
     }
 }

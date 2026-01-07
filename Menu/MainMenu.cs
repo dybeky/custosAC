@@ -1,48 +1,83 @@
-using CustosAC.Constants;
-using CustosAC.UI;
-using CustosAC.WinAPI;
+using CustosAC.Abstractions;
+using CustosAC.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace CustosAC.Menu;
 
-public static class MainMenu
+/// <summary>
+/// Главное меню с DI
+/// </summary>
+public class MainMenu
 {
-    public static void Run()
+    private readonly IConsoleUI _consoleUI;
+    private readonly IAdminService _adminService;
+    private readonly IProcessService _processService;
+    private readonly AutoMenu _autoMenu;
+    private readonly ManualMenu _manualMenu;
+    private readonly ExtraMenu _extraMenu;
+    private readonly AppSettings _settings;
+
+    public MainMenu(
+        IConsoleUI consoleUI,
+        IAdminService adminService,
+        IProcessService processService,
+        AutoMenu autoMenu,
+        ManualMenu manualMenu,
+        ExtraMenu extraMenu,
+        IOptions<AppSettings> settings)
+    {
+        _consoleUI = consoleUI;
+        _adminService = adminService;
+        _processService = processService;
+        _autoMenu = autoMenu;
+        _manualMenu = manualMenu;
+        _extraMenu = extraMenu;
+        _settings = settings.Value;
+    }
+
+    public async Task RunAsync()
     {
         while (true)
         {
-            ConsoleUI.PrintHeader();
-            ConsoleUI.PrintMenu("ГЛАВНОЕ МЕНЮ", new[]
+            _consoleUI.PrintHeader();
+            _consoleUI.PrintMenu("ГЛАВНОЕ МЕНЮ", new[]
             {
                 "Ручная проверка",
                 "Автоматическая проверка",
                 "Экстра"
             }, false);
 
-            int choice = ConsoleUI.GetChoice(3);
+            int choice = _consoleUI.GetChoice(3);
 
             switch (choice)
             {
                 case 0:
-                    ConsoleUI.ClearScreen();
-                    Console.WriteLine("\n\n");
-                    Console.WriteLine($"  {ConsoleUI.ColorOrange}╔════════════════════════════════════════════╗{ConsoleUI.ColorReset}");
-                    Console.WriteLine($"  {ConsoleUI.ColorOrange}║     + Закрываем открытые процессы... +     ║{ConsoleUI.ColorReset}");
-                    Console.WriteLine($"  {ConsoleUI.ColorOrange}╚════════════════════════════════════════════╝{ConsoleUI.ColorReset}");
-                    Thread.Sleep(AppConstants.ExitDelay);
-                    AdminHelper.KillAllProcesses();
-                    ConsoleUI.PrintCleanupMessage();
-                    Thread.Sleep(AppConstants.CleanupDelay);
+                    await ExitApplicationAsync();
                     return;
                 case 1:
-                    ManualMenu.Run();
+                    await _manualMenu.RunAsync();
                     break;
                 case 2:
-                    AutoMenu.Run();
+                    await _autoMenu.RunAsync();
                     break;
                 case 3:
-                    ExtraMenu.Run();
+                    await _extraMenu.RunAsync();
                     break;
             }
         }
+    }
+
+    private async Task ExitApplicationAsync()
+    {
+        _consoleUI.ClearScreen();
+        Console.WriteLine("\n\n");
+        Console.WriteLine("  \x1b[38;5;208m╔════════════════════════════════════════════╗\x1b[0m");
+        Console.WriteLine("  \x1b[38;5;208m║     + Закрываем открытые процессы... +     ║\x1b[0m");
+        Console.WriteLine("  \x1b[38;5;208m╚════════════════════════════════════════════╝\x1b[0m");
+
+        await Task.Delay(_settings.Timeouts.ExitDelayMs);
+        _processService.KillAllTrackedProcesses();
+        _consoleUI.PrintCleanupMessage();
+        await Task.Delay(_settings.Timeouts.CleanupDelayMs);
     }
 }

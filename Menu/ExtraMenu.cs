@@ -1,350 +1,187 @@
 using System.Diagnostics;
+using CustosAC.Abstractions;
+using CustosAC.Configuration;
 using CustosAC.Constants;
-using CustosAC.UI;
+using Microsoft.Extensions.Options;
 
 namespace CustosAC.Menu;
 
-public static class ExtraMenu
+/// <summary>
+/// Меню экстра функций с DI
+/// </summary>
+public class ExtraMenu
 {
-    public static void Run()
+    private readonly IConsoleUI _consoleUI;
+    private readonly IProcessService _processService;
+    private readonly IRegistryService _registryService;
+    private readonly RegistrySettings _registrySettings;
+    private readonly AppSettings _appSettings;
+
+    public ExtraMenu(
+        IConsoleUI consoleUI,
+        IProcessService processService,
+        IRegistryService registryService,
+        IOptions<RegistrySettings> registrySettings,
+        IOptions<AppSettings> appSettings)
+    {
+        _consoleUI = consoleUI;
+        _processService = processService;
+        _registryService = registryService;
+        _registrySettings = registrySettings.Value;
+        _appSettings = appSettings.Value;
+    }
+
+    public async Task RunAsync()
     {
         while (true)
         {
-            ConsoleUI.PrintHeader();
-            ConsoleUI.PrintMenu("ЭКСТРА", new[]
+            _consoleUI.PrintHeader();
+            _consoleUI.PrintMenu("ЭКСТРА", new[]
             {
                 "Включить реестр",
                 "Включить параметры системы и сеть"
             }, true);
 
-            int choice = ConsoleUI.GetChoice(2);
+            int choice = _consoleUI.GetChoice(2);
             if (choice == 0) break;
 
-            ConsoleUI.PrintHeader();
+            _consoleUI.PrintHeader();
             switch (choice)
             {
-                case 1: EnableRegistry(); break;
-                case 2: EnableSystemSettings(); break;
+                case 1:
+                    await EnableRegistryAsync();
+                    break;
+                case 2:
+                    await EnableSystemSettingsAsync();
+                    break;
             }
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // ВКЛЮЧЕНИЕ РЕЕСТРА
-    // ═══════════════════════════════════════════════════════════════
-
-    private static void EnableRegistry()
+    private async Task EnableRegistryAsync()
     {
-        bool success = RunRegDelete(RegistryConstants.RegeditBlockPath);
+        bool success = await _registryService.DeleteKeyAsync(_registrySettings.RegeditBlockPath);
 
         if (success)
         {
-            ConsoleUI.Log("Реестр успешно включен", true);
-            Console.WriteLine($"\n{ConsoleUI.ColorGreen}+ Теперь вы можете открыть regedit{ConsoleUI.ColorReset}");
+            _consoleUI.Log("Реестр успешно включен", true);
+            Console.WriteLine("\n\x1b[32m+ Теперь вы можете открыть regedit\x1b[0m");
         }
         else
         {
-            ConsoleUI.Log("Ошибка при включении реестра", false);
-            Console.WriteLine($"\n{ConsoleUI.Warning} {ConsoleUI.ColorYellow}Возможно реестр уже включен или требуются права администратора{ConsoleUI.ColorReset}");
+            _consoleUI.Log("Ошибка при включении реестра", false);
+            Console.WriteLine("\n\x1b[33m[!]\x1b[0m \x1b[33mВозможно реестр уже включен или требуются права администратора\x1b[0m");
         }
-        ConsoleUI.Pause();
+        _consoleUI.Pause();
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // ВКЛЮЧЕНИЕ ПАРАМЕТРОВ СИСТЕМЫ И СЕТИ
-    // ═══════════════════════════════════════════════════════════════
-
-    private static void EnableSystemSettings()
+    private async Task EnableSystemSettingsAsync()
     {
-        ConsoleUI.Log("Разблокируем доступ к параметрам системы и сети...", true);
+        _consoleUI.Log("Разблокируем доступ к параметрам системы и сети...", true);
         Console.WriteLine();
 
         int unlockedCount = 0;
 
         // 1. Удаление отдельных значений реестра
-        unlockedCount += DeleteRegistryValues();
-
-        // 2. Удаление целых веток реестра
-        unlockedCount += DeleteRegistryKeys();
-
-        // 3. Перезапуск сетевых служб
-        RestartNetworkServices();
-
-        // 4. Сброс сетевых настроек
-        ResetNetworkSettings();
-
-        // 5. Включение сетевых адаптеров
-        EnableNetworkAdapters();
-
-        // 6. Открываем параметры сети
-        OpenNetworkSettings();
-
-        // Итог
-        PrintUnlockResult(unlockedCount);
-        ConsoleUI.Pause();
-    }
-
-    /// <summary>Удаляет отдельные значения реестра для разблокировки</summary>
-    private static int DeleteRegistryValues()
-    {
-        ConsoleUI.Log("Удаляем блокировки реестра...", true);
-
-        int count = 0;
+        _consoleUI.Log("Удаляем блокировки реестра...", true);
         foreach (var (key, value) in RegistryConstants.ValuesToDelete)
         {
-            if (DeleteRegistryValue(key, value))
-                count++;
+            if (await DeleteRegistryValueAsync(key, value))
+                unlockedCount++;
         }
-        return count;
-    }
 
-    /// <summary>Удаляет целые ветки реестра</summary>
-    private static int DeleteRegistryKeys()
-    {
+        // 2. Удаление целых веток реестра
         Console.WriteLine();
-        ConsoleUI.Log("Удаляем политики полностью...", true);
-
-        int count = 0;
+        _consoleUI.Log("Удаляем политики полностью...", true);
         foreach (var key in RegistryConstants.KeysToDelete)
         {
-            if (DeleteRegistryKey(key))
-                count++;
+            if (await _registryService.DeleteKeyAsync(key))
+            {
+                _consoleUI.Log($"  + Удалена ветка: {key}", true);
+                unlockedCount++;
+            }
         }
-        return count;
-    }
 
-    /// <summary>Перезапускает сетевые службы</summary>
-    private static void RestartNetworkServices()
-    {
+        // 3. Перезапуск сетевых служб
         Console.WriteLine();
-        ConsoleUI.Log("Перезапускаем сетевые службы...", true);
-
-        foreach (var service in AppConstants.NetworkServices)
+        _consoleUI.Log("Перезапускаем сетевые службы...", true);
+        foreach (var service in new[] { "netprofm", "NlaSvc", "Dhcp", "Dnscache" })
         {
-            RestartService(service);
+            await RestartServiceAsync(service);
+        }
+
+        // 4. Сброс сетевых настроек
+        Console.WriteLine();
+        _consoleUI.Log("Сбрасываем сетевые настройки...", true);
+        await RunCommandSilentAsync("ipconfig", "/release");
+        await RunCommandSilentAsync("ipconfig", "/renew");
+        await RunCommandSilentAsync("ipconfig", "/flushdns");
+        await RunCommandSilentAsync("netsh", "winsock reset");
+        await RunCommandSilentAsync("netsh", "int ip reset");
+
+        // 5. Включение сетевых адаптеров
+        Console.WriteLine();
+        _consoleUI.Log("Проверяем сетевые адаптеры...", true);
+        await RunCommandSilentAsync("powershell", "-Command \"Get-NetAdapter -Physical | Where-Object {$_.Status -eq 'Disabled'} | Enable-NetAdapter -Confirm:$false\"");
+        _consoleUI.Log("  + Сетевые адаптеры проверены", true);
+
+        // 6. Открываем параметры сети
+        Console.WriteLine();
+        _consoleUI.Log("Открываем параметры сети...", true);
+        await _processService.OpenUrlAsync("ms-settings:network");
+
+        // Итог
+        Console.WriteLine();
+        PrintUnlockResult(unlockedCount);
+        _consoleUI.Pause();
+    }
+
+    private async Task<bool> DeleteRegistryValueAsync(string key, string value)
+    {
+        var result = await _registryService.DeleteValueAsync(key, value);
+        if (result)
+        {
+            string loc = key.StartsWith("HKCU") ? "HKCU" : "HKLM";
+            _consoleUI.Log($"  + Удалено: {value} ({loc})", true);
+        }
+        return result;
+    }
+
+    private async Task RestartServiceAsync(string name)
+    {
+        try
+        {
+            await RunCommandSilentAsync("net", $"stop {name}");
+            if (await RunCommandSilentAsync("net", $"start {name}"))
+            {
+                _consoleUI.Log($"  + Перезапущена служба: {name}", true);
+            }
+        }
+        catch
+        {
+            // Игнорируем ошибки служб
         }
     }
 
-    /// <summary>Сбрасывает сетевые настройки</summary>
-    private static void ResetNetworkSettings()
+    private async Task<bool> RunCommandSilentAsync(string command, string args)
     {
-        Console.WriteLine();
-        ConsoleUI.Log("Сбрасываем сетевые настройки...", true);
-
-        RunSilentWithArgs("ipconfig", new[] { "/release" });
-        RunSilentWithArgs("ipconfig", new[] { "/renew" });
-        RunSilentWithArgs("ipconfig", new[] { "/flushdns" });
-        RunSilentWithArgs("netsh", new[] { "winsock", "reset" });
-        RunSilentWithArgs("netsh", new[] { "int", "ip", "reset" });
+        return await _processService.RunCommandAsync(command, args, _appSettings.Timeouts.DefaultProcessTimeoutMs);
     }
 
-    /// <summary>Включает отключенные сетевые адаптеры</summary>
-    private static void EnableNetworkAdapters()
+    private void PrintUnlockResult(int unlockedCount)
     {
-        Console.WriteLine();
-        ConsoleUI.Log("Проверяем сетевые адаптеры...", true);
-
-        RunSilent("powershell", "-Command \"Get-NetAdapter -Physical | Where-Object {$_.Status -eq 'Disabled'} | Enable-NetAdapter -Confirm:$false\"", AppConstants.PowerShellTimeout);
-        ConsoleUI.Log("  + Сетевые адаптеры проверены", true);
-    }
-
-    /// <summary>Открывает параметры сети в Windows Settings</summary>
-    private static void OpenNetworkSettings()
-    {
-        Console.WriteLine();
-        ConsoleUI.Log("Открываем параметры сети...", true);
-        RunSilent("cmd", "/c start ms-settings:network");
-    }
-
-    /// <summary>Выводит результат разблокировки</summary>
-    private static void PrintUnlockResult(int unlockedCount)
-    {
-        Console.WriteLine();
         if (unlockedCount > 0)
         {
-            Console.WriteLine($"{ConsoleUI.ColorGreen}{ConsoleUI.ColorBold}╔══════════════════════════════════════════════════╗{ConsoleUI.ColorReset}");
-            Console.WriteLine($"{ConsoleUI.ColorGreen}║  + СЕТЬ И ПАРАМЕТРЫ СИСТЕМЫ РАЗБЛОКИРОВАНЫ       ║{ConsoleUI.ColorReset}");
-            Console.WriteLine($"{ConsoleUI.ColorGreen}║    Удалено блокировок: {unlockedCount,-3}                        ║{ConsoleUI.ColorReset}");
-            Console.WriteLine($"{ConsoleUI.ColorGreen}{ConsoleUI.ColorBold}╚══════════════════════════════════════════════════╝{ConsoleUI.ColorReset}");
+            Console.WriteLine("\x1b[32m\x1b[1m╔══════════════════════════════════════════════════╗\x1b[0m");
+            Console.WriteLine($"\x1b[32m║  + СЕТЬ И ПАРАМЕТРЫ СИСТЕМЫ РАЗБЛОКИРОВАНЫ       ║\x1b[0m");
+            Console.WriteLine($"\x1b[32m║    Удалено блокировок: {unlockedCount,-3}                        ║\x1b[0m");
+            Console.WriteLine("\x1b[32m\x1b[1m╚══════════════════════════════════════════════════╝\x1b[0m");
             Console.WriteLine();
-            Console.WriteLine($"{ConsoleUI.ColorYellow}{ConsoleUI.Warning} Рекомендуется перезагрузить компьютер{ConsoleUI.ColorReset}");
+            Console.WriteLine("\x1b[33m[!]\x1b[0m \x1b[33mРекомендуется перезагрузить компьютер\x1b[0m");
         }
         else
         {
-            Console.WriteLine($"{ConsoleUI.ColorGreen}+ Блокировки не найдены, сеть уже разблокирована{ConsoleUI.ColorReset}");
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
-    // ═══════════════════════════════════════════════════════════════
-
-    /// <summary>Удаляет ключ реестра целиком</summary>
-    private static bool RunRegDelete(string key)
-    {
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "reg",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardError = true
-            };
-            psi.ArgumentList.Add("delete");
-            psi.ArgumentList.Add(key);
-            psi.ArgumentList.Add("/f");
-
-            using var p = Process.Start(psi);
-            p?.WaitForExit();
-            return p?.ExitCode == 0;
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"RunRegDelete error for {key}: {ex.Message}");
-            return false;
-        }
-    }
-
-    /// <summary>Удаляет конкретное значение из ключа реестра</summary>
-    private static bool DeleteRegistryValue(string key, string value)
-    {
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "reg",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            psi.ArgumentList.Add("delete");
-            psi.ArgumentList.Add(key);
-            psi.ArgumentList.Add("/v");
-            psi.ArgumentList.Add(value);
-            psi.ArgumentList.Add("/f");
-
-            using var p = Process.Start(psi);
-            p?.WaitForExit();
-
-            if (p?.ExitCode == 0)
-            {
-                string loc = key.StartsWith("HKCU") ? "HKCU" : "HKLM";
-                ConsoleUI.Log($"  + Удалено: {value} ({loc})", true);
-                return true;
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"DeleteRegistryValue error for {key}\\{value}: {ex.Message}");
-        }
-        return false;
-    }
-
-    /// <summary>Удаляет ветку реестра целиком</summary>
-    private static bool DeleteRegistryKey(string key)
-    {
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "reg",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            psi.ArgumentList.Add("delete");
-            psi.ArgumentList.Add(key);
-            psi.ArgumentList.Add("/f");
-
-            using var p = Process.Start(psi);
-            p?.WaitForExit();
-
-            if (p?.ExitCode == 0)
-            {
-                ConsoleUI.Log($"  + Удалена ветка: {key}", true);
-                return true;
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"DeleteRegistryKey error for {key}: {ex.Message}");
-        }
-        return false;
-    }
-
-    /// <summary>Перезапускает службу Windows</summary>
-    private static void RestartService(string name)
-    {
-        try
-        {
-            RunSilentWithArgs("net", new[] { "stop", name }, AppConstants.ServiceTimeout);
-            if (RunSilentWithArgs("net", new[] { "start", name }, AppConstants.ServiceTimeout))
-                ConsoleUI.Log($"  + Перезапущена служба: {name}", true);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"RestartService error for {name}: {ex.Message}");
-        }
-    }
-
-    /// <summary>Запускает команду без окна с использованием ArgumentList (безопасно)</summary>
-    private static bool RunSilentWithArgs(string cmd, string[] args, int timeout = 0)
-    {
-        if (timeout == 0)
-            timeout = AppConstants.DefaultProcessTimeout;
-
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = cmd,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-
-            foreach (var arg in args)
-                psi.ArgumentList.Add(arg);
-
-            using var p = Process.Start(psi);
-            p?.WaitForExit(timeout);
-            return p?.ExitCode == 0;
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"RunSilentWithArgs error for {cmd}: {ex.Message}");
-            return false;
-        }
-    }
-
-    /// <summary>Запускает команду без окна (для строковых аргументов)</summary>
-    private static bool RunSilent(string cmd, string args, int timeout = 0)
-    {
-        if (timeout == 0)
-            timeout = AppConstants.DefaultProcessTimeout;
-
-        try
-        {
-            using var p = Process.Start(new ProcessStartInfo
-            {
-                FileName = cmd,
-                Arguments = args,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            });
-            p?.WaitForExit(timeout);
-            return p?.ExitCode == 0;
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"RunSilent error for {cmd} {args}: {ex.Message}");
-            return false;
+            Console.WriteLine("\x1b[32m+ Блокировки не найдены, сеть уже разблокирована\x1b[0m");
         }
     }
 }
