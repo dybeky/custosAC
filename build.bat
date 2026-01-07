@@ -14,13 +14,13 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [1/2] Очистка...
+echo [1/3] Очистка...
 if exist bin rmdir /s /q bin
 if exist obj rmdir /s /q obj
 if exist publish rmdir /s /q publish
 
-echo [2/2] Сборка...
-dotnet publish CustosAC.csproj -c Release -o publish
+echo [2/3] Сборка...
+dotnet publish -c Release --nologo -v q
 
 if %errorlevel% neq 0 (
     echo [ОШИБКА] Сборка не удалась!
@@ -28,8 +28,15 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+echo [3/3] Очистка временных файлов...
+if exist bin rmdir /s /q bin
+if exist obj rmdir /s /q obj
+
 echo.
 echo ========================================
-echo    ГОТОВО! publish\CustosAC.exe
+echo    ГОТОВО!
+echo    Файлы в папке: publish\
+echo ========================================
+dir publish /b
 echo ========================================
 pause

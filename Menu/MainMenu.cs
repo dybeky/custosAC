@@ -70,10 +70,9 @@ public class MainMenu
     private async Task ExitApplicationAsync()
     {
         _consoleUI.ClearScreen();
-        Console.WriteLine("\n\n");
-        Console.WriteLine("  \x1b[38;5;208m╔════════════════════════════════════════════╗\x1b[0m");
-        Console.WriteLine("  \x1b[38;5;208m║     + Закрываем открытые процессы... +     ║\x1b[0m");
-        Console.WriteLine("  \x1b[38;5;208m╚════════════════════════════════════════════╝\x1b[0m");
+        _consoleUI.PrintEmptyLine();
+        _consoleUI.PrintEmptyLine();
+        _consoleUI.PrintBox(new[] { "Закрываем открытые процессы..." }, true);
 
         await Task.Delay(_settings.Timeouts.ExitDelayMs);
         _processService.KillAllTrackedProcesses();

@@ -23,9 +23,6 @@ public interface IFileSystemService
     /// <summary>Прочитать весь текст из файла</summary>
     string ReadAllText(string path);
 
-    /// <summary>Прочитать все строки из файла</summary>
-    string[] ReadAllLines(string path);
-
     /// <summary>Получить имя файла из пути</summary>
     string GetFileName(string path);
 
@@ -40,10 +37,4 @@ public interface IFileSystemService
 
     /// <summary>Получить информацию о файле</summary>
     FileInfo GetFileInfo(string path);
-
-    /// <summary>Записать текст в файл</summary>
-    void WriteAllText(string path, string contents);
-
-    /// <summary>Удалить файл</summary>
-    void DeleteFile(string path);
 }

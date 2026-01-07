@@ -16,6 +16,8 @@ public class ExternalResourceSettings
         new() { Username = "@MelonySolutionBot", Name = "Melony Solution Bot" },
         new() { Username = "@UndeadSellerBot", Name = "Undead Seller Bot" }
     };
+
+    public string[] NetworkServices { get; set; } = { "netprofm", "NlaSvc", "Dhcp", "Dnscache" };
 }
 
 /// <summary>

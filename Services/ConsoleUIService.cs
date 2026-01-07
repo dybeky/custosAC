@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using CustosAC.Abstractions;
 using CustosAC.Configuration;
+using CustosAC.Constants;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace CustosAC.Services;
@@ -13,6 +15,7 @@ public class ConsoleUIService : IConsoleUI
 {
     private bool _isAdmin;
     private readonly AppSettings _settings;
+    private readonly ILogger<ConsoleUIService> _logger;
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
@@ -26,35 +29,10 @@ public class ConsoleUIService : IConsoleUI
     private const int STD_OUTPUT_HANDLE = -11;
     private const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;
 
-    // ANSI цвета
-    public const string ColorReset = "\x1b[0m";
-    public const string ColorRed = "\x1b[31m";
-    public const string ColorGreen = "\x1b[32m";
-    public const string ColorYellow = "\x1b[33m";
-    public const string ColorBlue = "\x1b[34m";
-    public const string ColorMagenta = "\x1b[35m";
-    public const string ColorCyan = "\x1b[36m";
-    public const string ColorWhite = "\x1b[37m";
-    public const string ColorOrange = "\x1b[38;5;208m";
-    public const string ColorBold = "\x1b[1m";
-    public const string ColorDim = "\x1b[2m";
-
-    // Префиксы
-    public string Success => $"{ColorGreen}[+]{ColorReset}";
-    public string Error => $"{ColorRed}[-]{ColorReset}";
-    public string Info => $"{ColorBlue}[i]{ColorReset}";
-    public string Warning => $"{ColorYellow}[!]{ColorReset}";
-    public string Arrow => $"{ColorCyan}[>]{ColorReset}";
-    public string Scan => $"{ColorMagenta}[*]{ColorReset}";
-
-    // Разделители
-    public const string SeparatorLong = "────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────";
-    public const string SeparatorMedium = "────────────────────────────────────────────────────────────────────────────────";
-    public const string SeparatorShort = "─────────────────────────────────────────";
-
-    public ConsoleUIService(IOptions<AppSettings> settings)
+    public ConsoleUIService(IOptions<AppSettings> settings, ILogger<ConsoleUIService> logger)
     {
         _settings = settings.Value;
+        _logger = logger;
     }
 
     public void SetAdminStatus(bool isAdmin)
@@ -88,9 +66,9 @@ public class ConsoleUIService : IConsoleUI
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.InputEncoding = System.Text.Encoding.UTF8;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Консоль может не поддерживать некоторые функции
+            _logger.LogDebug(ex, "Console setup partially failed - some features may not be supported");
         }
     }
 
@@ -111,58 +89,58 @@ public class ConsoleUIService : IConsoleUI
         ClearScreen();
         Console.WriteLine();
 
-        Console.WriteLine($"  {ColorOrange}╭──────────────────────────────────────────────────────────╮{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│                                                          │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│     ██████╗██╗   ██╗███████╗████████╗ ██████╗ ███████╗   │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│    ██╔════╝██║   ██║██╔════╝╚══██╔══╝██╔═══██╗██╔════╝   │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│    ██║     ██║   ██║███████╗   ██║   ██║   ██║███████╗   │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│    ██║     ██║   ██║╚════██║   ██║   ██║   ██║╚════██║   │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│    ╚██████╗╚██████╔╝███████║   ██║   ╚██████╔╝███████║   │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│     ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝    ╚═════╝ ╚══════╝   │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│                                                          │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│               ✦ sdelano s lubovyu ✦                      │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│                                                          │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}╰──────────────────────────────────────────────────────────╯{ColorReset}");
+        Console.WriteLine($"  {AnsiColors.Orange}╭──────────────────────────────────────────────────────────╮{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│                                                          │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│     ██████╗██╗   ██╗███████╗████████╗ ██████╗ ███████╗   │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│    ██╔════╝██║   ██║██╔════╝╚══██╔══╝██╔═══██╗██╔════╝   │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│    ██║     ██║   ██║███████╗   ██║   ██║   ██║███████╗   │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│    ██║     ██║   ██║╚════██║   ██║   ██║   ██║╚════██║   │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│    ╚██████╗╚██████╔╝███████║   ██║   ╚██████╔╝███████║   │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│     ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝    ╚═════╝ ╚══════╝   │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│                                                          │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│               ✦ sdelano s lubovyu ✦                      │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│                                                          │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}╰──────────────────────────────────────────────────────────╯{AnsiColors.Reset}");
         Console.WriteLine();
 
         if (_isAdmin)
         {
-            Console.WriteLine($"  {Success} Статус: {ColorGreen}{ColorBold}Администратор{ColorReset}");
+            Console.WriteLine($"  {AnsiColors.SuccessPrefix} Статус: {AnsiColors.BoldGreen("Администратор")}");
         }
         else
         {
-            Console.WriteLine($"  {Error} Статус: {ColorRed}{ColorBold}Отсутствуют права администратора!{ColorReset}");
+            Console.WriteLine($"  {AnsiColors.ErrorPrefix} Статус: {AnsiColors.BoldRed("Отсутствуют права администратора!")}");
         }
-        Console.WriteLine($"  {Info} Дата: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
+        Console.WriteLine($"  {AnsiColors.InfoPrefix} Дата: {DateTime.Now:dd.MM.yyyy HH:mm:ss}");
         Console.WriteLine();
     }
 
     public void PrintMenu(string title, string[] options, bool showBack)
     {
         string centeredTitle = new string(' ', _settings.Console.MenuPadding) + title;
-        Console.WriteLine($"\n{ColorYellow}{ColorBold}{centeredTitle}{ColorReset}\n");
+        Console.WriteLine($"\n{AnsiColors.BoldYellow(centeredTitle)}\n");
 
         int menuNumber = 1;
         for (int i = 0; i < options.Length; i++)
         {
             if (options[i].Contains("────"))
             {
-                Console.WriteLine($"      {ColorDim}{options[i]}{ColorReset}");
+                Console.WriteLine($"      {AnsiColors.Dim}{options[i]}{AnsiColors.Reset}");
             }
             else
             {
-                Console.WriteLine($"  {ColorCyan}{ColorBold}[{menuNumber}]{ColorReset} {Arrow} {options[i]}");
+                Console.WriteLine($"  {AnsiColors.BoldCyan($"[{menuNumber}]")} {AnsiColors.ArrowPrefix} {options[i]}");
                 menuNumber++;
             }
         }
 
         if (showBack)
         {
-            Console.WriteLine($"\n  {ColorMagenta}{ColorBold}[0]{ColorReset} {ColorMagenta}< Назад{ColorReset}");
+            Console.WriteLine($"\n  {AnsiColors.Magenta}{AnsiColors.Bold}[0]{AnsiColors.Reset} {AnsiColors.Magenta}< Назад{AnsiColors.Reset}");
         }
         else
         {
-            Console.WriteLine($"\n  {ColorRed}{ColorBold}[0]{ColorReset} {ColorRed}X Выход{ColorReset}");
+            Console.WriteLine($"\n  {AnsiColors.Red}{AnsiColors.Bold}[0]{AnsiColors.Reset} {AnsiColors.Red}X Выход{AnsiColors.Reset}");
         }
         Console.WriteLine();
     }
@@ -171,7 +149,7 @@ public class ConsoleUIService : IConsoleUI
     {
         while (true)
         {
-            Console.Write($"\n{ColorGreen}{ColorBold}[>]{ColorReset} Выберите опцию [0-{maxOption}]: ");
+            Console.Write($"\n{AnsiColors.BoldGreen("[>]")} Выберите опцию [0-{maxOption}]: ");
 
             string? input = Console.ReadLine();
             if (string.IsNullOrEmpty(input))
@@ -182,19 +160,19 @@ public class ConsoleUIService : IConsoleUI
                 return choice;
             }
 
-            Console.WriteLine($"\n{Warning} {ColorRed}{ColorBold}Ошибка: Введите число от 0 до {maxOption}{ColorReset}");
+            Console.WriteLine($"\n{AnsiColors.WarningPrefix} {AnsiColors.BoldRed($"Ошибка: Введите число от 0 до {maxOption}")}");
         }
     }
 
     public void Log(string message, bool success)
     {
-        string prefix = success ? Success : Error;
+        string prefix = success ? AnsiColors.SuccessPrefix : AnsiColors.ErrorPrefix;
         Console.WriteLine($"  {prefix} {message}");
     }
 
     public void Pause()
     {
-        Console.WriteLine($"\n{ColorGreen}{ColorBold}[>]{ColorReset} Нажмите Enter для продолжения...");
+        Console.WriteLine($"\n{AnsiColors.BoldGreen("[>]")} Нажмите Enter для продолжения...");
         Console.ReadLine();
     }
 
@@ -202,7 +180,7 @@ public class ConsoleUIService : IConsoleUI
     {
         if (files.Count == 0)
         {
-            Console.WriteLine($"\n{ColorYellow}  Нет файлов для отображения{ColorReset}");
+            Console.WriteLine($"\n{AnsiColors.Warning("Нет файлов для отображения")}");
             return;
         }
 
@@ -213,31 +191,31 @@ public class ConsoleUIService : IConsoleUI
         {
             ClearScreen();
 
-            Console.WriteLine($"\n{ColorCyan}{ColorBold}═══ ПРОСМОТР ФАЙЛОВ (Страница {currentPage + 1} из {totalPages}) ═══{ColorReset}");
-            Console.WriteLine($"{ColorYellow}Всего файлов: {files.Count}{ColorReset}\n");
+            Console.WriteLine($"\n{AnsiColors.BoldCyan($"═══ ПРОСМОТР ФАЙЛОВ (Страница {currentPage + 1} из {totalPages}) ═══")}");
+            Console.WriteLine($"{AnsiColors.Warning($"Всего файлов: {files.Count}")}\n");
 
             int start = currentPage * itemsPerPage;
             int end = Math.Min(start + itemsPerPage, files.Count);
 
             for (int i = start; i < end; i++)
             {
-                Console.WriteLine($"  {ColorCyan}[{i + 1}]{ColorReset} {files[i]}");
+                Console.WriteLine($"  {AnsiColors.Highlight($"[{i + 1}]")} {files[i]}");
             }
 
-            Console.WriteLine($"\n{ColorCyan}{SeparatorLong}{ColorReset}");
-            Console.WriteLine($"\n{ColorYellow}{ColorBold}Навигация:{ColorReset}");
+            Console.WriteLine($"\n{AnsiColors.Cyan}{AnsiColors.SeparatorLong}{AnsiColors.Reset}");
+            Console.WriteLine($"\n{AnsiColors.BoldYellow("Навигация:")}");
 
             if (currentPage > 0)
             {
-                Console.WriteLine($"  {ColorGreen}[P]{ColorReset} - Предыдущая страница");
+                Console.WriteLine($"  {AnsiColors.Success("[P]")} - Предыдущая страница");
             }
             if (currentPage < totalPages - 1)
             {
-                Console.WriteLine($"  {ColorGreen}[N]{ColorReset} - Следующая страница");
+                Console.WriteLine($"  {AnsiColors.Success("[N]")} - Следующая страница");
             }
-            Console.WriteLine($"  {ColorRed}[0]{ColorReset} - Вернуться назад");
+            Console.WriteLine($"  {AnsiColors.Error("[0]")} - Вернуться назад");
 
-            Console.Write($"\n{ColorGreen}{ColorBold}[>]{ColorReset} Выберите действие: ");
+            Console.Write($"\n{AnsiColors.BoldGreen("[>]")} Выберите действие: ");
             string? input = Console.ReadLine()?.ToLower().Trim();
 
             switch (input)
@@ -249,7 +227,7 @@ public class ConsoleUIService : IConsoleUI
                     }
                     else
                     {
-                        Console.WriteLine($"{Warning} {ColorYellow}Это последняя страница{ColorReset}");
+                        Console.WriteLine($"{AnsiColors.WarningPrefix} {AnsiColors.Warning("Это последняя страница")}");
                         Thread.Sleep(_settings.Timeouts.UiDelayMs);
                     }
                     break;
@@ -260,7 +238,7 @@ public class ConsoleUIService : IConsoleUI
                     }
                     else
                     {
-                        Console.WriteLine($"{Warning} {ColorYellow}Это первая страница{ColorReset}");
+                        Console.WriteLine($"{AnsiColors.WarningPrefix} {AnsiColors.Warning("Это первая страница")}");
                         Thread.Sleep(_settings.Timeouts.UiDelayMs);
                     }
                     break;
@@ -269,7 +247,7 @@ public class ConsoleUIService : IConsoleUI
                 case null:
                     return;
                 default:
-                    Console.WriteLine($"{Error} {ColorRed}Неверная команда{ColorReset}");
+                    Console.WriteLine($"{AnsiColors.ErrorPrefix} {AnsiColors.Error("Неверная команда")}");
                     Thread.Sleep(_settings.Timeouts.UiDelayMs);
                     break;
             }
@@ -279,23 +257,23 @@ public class ConsoleUIService : IConsoleUI
     public void PrintCleanupMessage()
     {
         Console.WriteLine();
-        Console.WriteLine($"  {ColorOrange}╭──────────────────────────────────────────────────────────╮{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│                                                          │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│      ██████╗ ██╗   ██╗███████╗                           │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│      ██╔══██╗╚██╗ ██╔╝██╔════╝                           │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│      ██████╔╝ ╚████╔╝ █████╗                             │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│      ██╔══██╗  ╚██╔╝  ██╔══╝                             │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│      ██████╔╝   ██║   ███████╗                           │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│      ╚═════╝    ╚═╝   ╚══════╝                           │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}│                                                          │{ColorReset}");
-        Console.WriteLine($"  {ColorOrange}╰──────────────────────────────────────────────────────────╯{ColorReset}");
+        Console.WriteLine($"  {AnsiColors.Orange}╭──────────────────────────────────────────────────────────╮{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│                                                          │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│      ██████╗ ██╗   ██╗███████╗                           │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│      ██╔══██╗╚██╗ ██╔╝██╔════╝                           │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│      ██████╔╝ ╚████╔╝ █████╗                             │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│      ██╔══██╗  ╚██╔╝  ██╔══╝                             │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│      ██████╔╝   ██║   ███████╗                           │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│      ╚═════╝    ╚═╝   ╚══════╝                           │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}│                                                          │{AnsiColors.Reset}");
+        Console.WriteLine($"  {AnsiColors.Orange}╰──────────────────────────────────────────────────────────╯{AnsiColors.Reset}");
         Console.WriteLine();
     }
 
     public void PrintProgress(string operation, int current, int total)
     {
         int percentage = total > 0 ? (current * 100) / total : 0;
-        Console.Write($"\r  {Scan} {operation}: [{percentage}%] {current}/{total}    ");
+        Console.Write($"\r  {AnsiColors.ScanPrefix} {operation}: [{percentage}%] {current}/{total}    ");
     }
 
     public void PrintEmptyLine()
@@ -305,6 +283,60 @@ public class ConsoleUIService : IConsoleUI
 
     public void PrintSeparator()
     {
-        Console.WriteLine($"  {ColorDim}{SeparatorMedium}{ColorReset}");
+        Console.WriteLine($"  {AnsiColors.Dim}{AnsiColors.SeparatorMedium}{AnsiColors.Reset}");
+    }
+
+    public void PrintSuccess(string message)
+    {
+        Console.WriteLine($"  {AnsiColors.Success(message)}");
+    }
+
+    public void PrintError(string message)
+    {
+        Console.WriteLine($"  {AnsiColors.Error(message)}");
+    }
+
+    public void PrintWarning(string message)
+    {
+        Console.WriteLine($"  {AnsiColors.WarningPrefix} {AnsiColors.Warning(message)}");
+    }
+
+    public void PrintInfo(string message)
+    {
+        Console.WriteLine($"  {AnsiColors.InfoPrefix} {message}");
+    }
+
+    public void PrintHighlight(string message)
+    {
+        Console.WriteLine($"  {AnsiColors.Highlight(message)}");
+    }
+
+    public void PrintSectionHeader(string title)
+    {
+        Console.WriteLine($"\n{AnsiColors.BoldCyan($"═══ {title.ToUpper()} ═══")}\n");
+    }
+
+    public void PrintListItem(string text)
+    {
+        Console.WriteLine($"  {AnsiColors.ArrowPrefix} {text}");
+    }
+
+    public void PrintHint(string title)
+    {
+        Console.WriteLine($"\n{AnsiColors.BoldYellow(title)}");
+    }
+
+    public void PrintBox(string[] lines, bool success)
+    {
+        string color = success ? AnsiColors.Green : AnsiColors.Red;
+        string bold = AnsiColors.Bold;
+        string reset = AnsiColors.Reset;
+
+        Console.WriteLine($"{color}{bold}╔══════════════════════════════════════════════════╗{reset}");
+        foreach (var line in lines)
+        {
+            Console.WriteLine($"{color}║  {line,-48}║{reset}");
+        }
+        Console.WriteLine($"{color}{bold}╚══════════════════════════════════════════════════╝{reset}");
     }
 }

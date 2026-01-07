@@ -82,10 +82,12 @@ public abstract class BaseScannerAsync : IScanner
         }
         catch (UnauthorizedAccessException)
         {
+            // Expected: access denied to system folders (e.g., System Volume Information)
             return;
         }
         catch (IOException)
         {
+            // Expected: folder is locked or in use
             return;
         }
 
@@ -162,11 +164,11 @@ public abstract class BaseScannerAsync : IScanner
         }
         catch (UnauthorizedAccessException)
         {
-            // Expected: no access
+            // Expected: access denied to protected files (common during scan)
         }
         catch (IOException)
         {
-            // Expected: file in use
+            // Expected: file in use or locked by another process
         }
     }
 

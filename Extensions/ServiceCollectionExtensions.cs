@@ -36,6 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<IKeywordMatcher, KeywordMatcherService>();
         services.AddTransient<IFileSystemService, FileSystemService>();
         services.AddTransient<IRegistryService, RegistryService>();
+        services.AddTransient<IExternalCheckService, ExternalCheckService>();
 
         // Scanners (Transient)
         services.AddTransient<AppDataScannerAsync>();

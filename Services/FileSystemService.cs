@@ -37,11 +37,6 @@ public class FileSystemService : IFileSystemService
         return File.ReadAllText(path);
     }
 
-    public string[] ReadAllLines(string path)
-    {
-        return File.ReadAllLines(path);
-    }
-
     public string GetFileName(string path)
     {
         return Path.GetFileName(path);
@@ -65,15 +60,5 @@ public class FileSystemService : IFileSystemService
     public FileInfo GetFileInfo(string path)
     {
         return new FileInfo(path);
-    }
-
-    public void WriteAllText(string path, string contents)
-    {
-        File.WriteAllText(path, contents);
-    }
-
-    public void DeleteFile(string path)
-    {
-        File.Delete(path);
     }
 }

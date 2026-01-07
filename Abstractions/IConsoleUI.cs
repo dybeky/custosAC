@@ -43,4 +43,31 @@ public interface IConsoleUI
 
     /// <summary>Вывести разделитель</summary>
     void PrintSeparator();
+
+    /// <summary>Вывести сообщение успеха (зеленый)</summary>
+    void PrintSuccess(string message);
+
+    /// <summary>Вывести сообщение ошибки (красный)</summary>
+    void PrintError(string message);
+
+    /// <summary>Вывести предупреждение (желтый)</summary>
+    void PrintWarning(string message);
+
+    /// <summary>Вывести информацию (синий)</summary>
+    void PrintInfo(string message);
+
+    /// <summary>Вывести выделенный текст (голубой)</summary>
+    void PrintHighlight(string message);
+
+    /// <summary>Вывести заголовок секции</summary>
+    void PrintSectionHeader(string title);
+
+    /// <summary>Вывести элемент списка</summary>
+    void PrintListItem(string text);
+
+    /// <summary>Вывести подсказку (желтый жирный)</summary>
+    void PrintHint(string title);
+
+    /// <summary>Вывести рамку с текстом</summary>
+    void PrintBox(string[] lines, bool success);
 }

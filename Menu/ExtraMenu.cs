@@ -2,6 +2,7 @@ using System.Diagnostics;
 using CustosAC.Abstractions;
 using CustosAC.Configuration;
 using CustosAC.Constants;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace CustosAC.Menu;
@@ -14,21 +15,27 @@ public class ExtraMenu
     private readonly IConsoleUI _consoleUI;
     private readonly IProcessService _processService;
     private readonly IRegistryService _registryService;
+    private readonly ILogger<ExtraMenu> _logger;
     private readonly RegistrySettings _registrySettings;
     private readonly AppSettings _appSettings;
+    private readonly ExternalResourceSettings _externalSettings;
 
     public ExtraMenu(
         IConsoleUI consoleUI,
         IProcessService processService,
         IRegistryService registryService,
+        ILogger<ExtraMenu> logger,
         IOptions<RegistrySettings> registrySettings,
-        IOptions<AppSettings> appSettings)
+        IOptions<AppSettings> appSettings,
+        IOptions<ExternalResourceSettings> externalSettings)
     {
         _consoleUI = consoleUI;
         _processService = processService;
         _registryService = registryService;
+        _logger = logger;
         _registrySettings = registrySettings.Value;
         _appSettings = appSettings.Value;
+        _externalSettings = externalSettings.Value;
     }
 
     public async Task RunAsync()
@@ -65,12 +72,14 @@ public class ExtraMenu
         if (success)
         {
             _consoleUI.Log("Реестр успешно включен", true);
-            Console.WriteLine("\n\x1b[32m+ Теперь вы можете открыть regedit\x1b[0m");
+            _consoleUI.PrintEmptyLine();
+            _consoleUI.PrintSuccess("+ Теперь вы можете открыть regedit");
         }
         else
         {
             _consoleUI.Log("Ошибка при включении реестра", false);
-            Console.WriteLine("\n\x1b[33m[!]\x1b[0m \x1b[33mВозможно реестр уже включен или требуются права администратора\x1b[0m");
+            _consoleUI.PrintEmptyLine();
+            _consoleUI.PrintWarning("Возможно реестр уже включен или требуются права администратора");
         }
         _consoleUI.Pause();
     }
@@ -78,7 +87,7 @@ public class ExtraMenu
     private async Task EnableSystemSettingsAsync()
     {
         _consoleUI.Log("Разблокируем доступ к параметрам системы и сети...", true);
-        Console.WriteLine();
+        _consoleUI.PrintEmptyLine();
 
         int unlockedCount = 0;
 
@@ -91,7 +100,7 @@ public class ExtraMenu
         }
 
         // 2. Удаление целых веток реестра
-        Console.WriteLine();
+        _consoleUI.PrintEmptyLine();
         _consoleUI.Log("Удаляем политики полностью...", true);
         foreach (var key in RegistryConstants.KeysToDelete)
         {
@@ -103,15 +112,15 @@ public class ExtraMenu
         }
 
         // 3. Перезапуск сетевых служб
-        Console.WriteLine();
+        _consoleUI.PrintEmptyLine();
         _consoleUI.Log("Перезапускаем сетевые службы...", true);
-        foreach (var service in new[] { "netprofm", "NlaSvc", "Dhcp", "Dnscache" })
+        foreach (var service in _externalSettings.NetworkServices)
         {
             await RestartServiceAsync(service);
         }
 
         // 4. Сброс сетевых настроек
-        Console.WriteLine();
+        _consoleUI.PrintEmptyLine();
         _consoleUI.Log("Сбрасываем сетевые настройки...", true);
         await RunCommandSilentAsync("ipconfig", "/release");
         await RunCommandSilentAsync("ipconfig", "/renew");
@@ -120,18 +129,18 @@ public class ExtraMenu
         await RunCommandSilentAsync("netsh", "int ip reset");
 
         // 5. Включение сетевых адаптеров
-        Console.WriteLine();
+        _consoleUI.PrintEmptyLine();
         _consoleUI.Log("Проверяем сетевые адаптеры...", true);
         await RunCommandSilentAsync("powershell", "-Command \"Get-NetAdapter -Physical | Where-Object {$_.Status -eq 'Disabled'} | Enable-NetAdapter -Confirm:$false\"");
         _consoleUI.Log("  + Сетевые адаптеры проверены", true);
 
         // 6. Открываем параметры сети
-        Console.WriteLine();
+        _consoleUI.PrintEmptyLine();
         _consoleUI.Log("Открываем параметры сети...", true);
         await _processService.OpenUrlAsync("ms-settings:network");
 
         // Итог
-        Console.WriteLine();
+        _consoleUI.PrintEmptyLine();
         PrintUnlockResult(unlockedCount);
         _consoleUI.Pause();
     }
@@ -157,9 +166,9 @@ public class ExtraMenu
                 _consoleUI.Log($"  + Перезапущена служба: {name}", true);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Игнорируем ошибки служб
+            _logger.LogDebug(ex, "Service {ServiceName} restart failed - expected if service is not running", name);
         }
     }
 
@@ -172,16 +181,17 @@ public class ExtraMenu
     {
         if (unlockedCount > 0)
         {
-            Console.WriteLine("\x1b[32m\x1b[1m╔══════════════════════════════════════════════════╗\x1b[0m");
-            Console.WriteLine($"\x1b[32m║  + СЕТЬ И ПАРАМЕТРЫ СИСТЕМЫ РАЗБЛОКИРОВАНЫ       ║\x1b[0m");
-            Console.WriteLine($"\x1b[32m║    Удалено блокировок: {unlockedCount,-3}                        ║\x1b[0m");
-            Console.WriteLine("\x1b[32m\x1b[1m╚══════════════════════════════════════════════════╝\x1b[0m");
-            Console.WriteLine();
-            Console.WriteLine("\x1b[33m[!]\x1b[0m \x1b[33mРекомендуется перезагрузить компьютер\x1b[0m");
+            _consoleUI.PrintBox(new[]
+            {
+                "+ СЕТЬ И ПАРАМЕТРЫ СИСТЕМЫ РАЗБЛОКИРОВАНЫ",
+                $"  Удалено блокировок: {unlockedCount}"
+            }, true);
+            _consoleUI.PrintEmptyLine();
+            _consoleUI.PrintWarning("Рекомендуется перезагрузить компьютер");
         }
         else
         {
-            Console.WriteLine("\x1b[32m+ Блокировки не найдены, сеть уже разблокирована\x1b[0m");
+            _consoleUI.PrintSuccess("+ Блокировки не найдены, сеть уже разблокирована");
         }
     }
 }
