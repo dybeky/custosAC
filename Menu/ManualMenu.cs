@@ -231,13 +231,22 @@ public class ManualMenu
                     _consoleUI.Log("Regedit открыт", true);
                     break;
                 case 2:
-                    await OpenRegistryAsync(_registrySettings.ScanKeys[0].Path);
+                    if (_registrySettings.ScanKeys.Length > 0)
+                        await OpenRegistryAsync(_registrySettings.ScanKeys[0].Path);
+                    else
+                        _consoleUI.Log("Ключ реестра не настроен", false);
                     break;
                 case 3:
-                    await OpenRegistryAsync(_registrySettings.ScanKeys[1].Path);
+                    if (_registrySettings.ScanKeys.Length > 1)
+                        await OpenRegistryAsync(_registrySettings.ScanKeys[1].Path);
+                    else
+                        _consoleUI.Log("Ключ реестра не настроен", false);
                     break;
                 case 4:
-                    await OpenRegistryAsync(_registrySettings.ScanKeys[2].Path);
+                    if (_registrySettings.ScanKeys.Length > 2)
+                        await OpenRegistryAsync(_registrySettings.ScanKeys[2].Path);
+                    else
+                        _consoleUI.Log("Ключ реестра не настроен", false);
                     break;
             }
             _consoleUI.Pause();
@@ -249,7 +258,7 @@ public class ManualMenu
         _consoleUI.PrintHeader();
         _consoleUI.PrintSectionHeader("ПРОВЕРКА STEAM АККАУНТОВ");
 
-        var scanner = new SteamScannerAsync(_keywordMatcher, _consoleUI, _scanSettings, _pathSettings);
+        using var scanner = new SteamScannerAsync(_keywordMatcher, _consoleUI, _scanSettings, _pathSettings);
         var result = await scanner.ScanAsync();
 
         if (result.Success && result.HasFindings)
@@ -327,7 +336,6 @@ public class ManualMenu
 
     private async Task OpenRegistryAsync(string path)
     {
-        await _processService.CopyToClipboardAsync(path);
         await _registryService.OpenRegistryEditorAsync(path, _processService);
         _consoleUI.Log($"Путь скопирован: {path}", true);
         _consoleUI.PrintWarning("Вставьте путь в regedit (Ctrl+V)");
