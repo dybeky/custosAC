@@ -52,7 +52,10 @@ public class ConsoleUIService : IConsoleUI
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            Process.Start(psi)?.WaitForExit();
+            using (var process = Process.Start(psi))
+            {
+                process?.WaitForExit();
+            }
 
             // Включаем обработку ANSI escape-последовательностей
             var handle = GetStdHandle(STD_OUTPUT_HANDLE);

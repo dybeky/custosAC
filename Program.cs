@@ -45,6 +45,7 @@ class Program
         adminService.SetupCloseHandler(() =>
         {
             processService.KillAllTrackedProcesses();
+            processService.Dispose();
             consoleUI.PrintCleanupMessage();
         });
 
@@ -54,5 +55,8 @@ class Program
         // Запуск главного меню
         var mainMenu = host.Services.GetRequiredService<MainMenu>();
         await mainMenu.RunAsync();
+
+        // Clean up on normal exit
+        processService.Dispose();
     }
 }

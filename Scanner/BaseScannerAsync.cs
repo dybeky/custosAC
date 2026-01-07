@@ -17,6 +17,7 @@ public abstract class BaseScannerAsync : IScanner
     protected readonly IConsoleUI ConsoleUI;
     protected readonly ILogger Logger;
     protected readonly ScanSettings ScanSettings;
+    protected readonly SemaphoreSlim _scanSemaphore;
 
     public abstract string Name { get; }
     public abstract string Description { get; }
@@ -33,6 +34,11 @@ public abstract class BaseScannerAsync : IScanner
         ConsoleUI = consoleUI;
         Logger = logger;
         ScanSettings = scanSettings.Value;
+
+        // Limit total concurrent I/O operations to prevent thread explosion
+        _scanSemaphore = new SemaphoreSlim(
+            ScanSettings.MaxDegreeOfParallelism,
+            ScanSettings.MaxDegreeOfParallelism);
     }
 
     public abstract Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default);
@@ -127,6 +133,7 @@ public abstract class BaseScannerAsync : IScanner
         HashSet<string> excludedDirs,
         CancellationToken ct)
     {
+        await _scanSemaphore.WaitAsync(ct);
         try
         {
             var name = FileSystem.GetFileName(entry);
@@ -169,6 +176,10 @@ public abstract class BaseScannerAsync : IScanner
         catch (IOException)
         {
             // Expected: file in use or locked by another process
+        }
+        finally
+        {
+            _scanSemaphore.Release();
         }
     }
 

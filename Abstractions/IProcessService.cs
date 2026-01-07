@@ -5,7 +5,7 @@ namespace CustosAC.Abstractions;
 /// <summary>
 /// Интерфейс для работы с процессами
 /// </summary>
-public interface IProcessService
+public interface IProcessService : IDisposable
 {
     /// <summary>Отслеживать процесс</summary>
     void TrackProcess(Process process);

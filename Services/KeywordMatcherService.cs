@@ -10,10 +10,13 @@ namespace CustosAC.Services;
 public class KeywordMatcherService : IKeywordMatcher
 {
     private readonly string[] _keywords;
+    private readonly string[] _keywordsLower;
 
     public KeywordMatcherService(IOptions<KeywordSettings> settings)
     {
         _keywords = settings.Value.Patterns;
+        // Pre-compute lowercase versions ONCE for performance
+        _keywordsLower = _keywords.Select(k => k.ToLowerInvariant()).ToArray();
     }
 
     public bool ContainsKeyword(string text)
@@ -22,7 +25,8 @@ public class KeywordMatcherService : IKeywordMatcher
             return false;
 
         string textLower = text.ToLowerInvariant();
-        return _keywords.Any(keyword => textLower.Contains(keyword.ToLowerInvariant()));
+        // Use pre-computed lowercase keywords for better performance
+        return _keywordsLower.Any(keyword => textLower.Contains(keyword));
     }
 
     public IReadOnlyList<string> GetKeywords()

@@ -9,12 +9,13 @@ namespace CustosAC.Services;
 /// <summary>
 /// Реализация сервиса работы с процессами
 /// </summary>
-public class ProcessService : IProcessService
+public class ProcessService : IProcessService, IDisposable
 {
     private readonly List<Process> _trackedProcesses = new();
     private readonly object _lock = new();
     private readonly ILogger<ProcessService> _logger;
     private readonly AppSettings _settings;
+    private bool _disposed = false;
 
     public ProcessService(ILogger<ProcessService> logger, IOptions<AppSettings> settings)
     {
@@ -35,8 +36,19 @@ public class ProcessService : IProcessService
     {
         lock (_lock)
         {
-            _trackedProcesses.Remove(process);
-            _logger.LogDebug("Untracking process: PID {PID}", process.Id);
+            if (_trackedProcesses.Remove(process))
+            {
+                _logger.LogDebug("Untracking process: PID {PID}", process.Id);
+                // Dispose when untracking
+                try
+                {
+                    process.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error disposing untracked process");
+                }
+            }
         }
     }
 
@@ -66,6 +78,18 @@ public class ProcessService : IProcessService
             catch (System.ComponentModel.Win32Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to kill process PID {PID}", process.Id);
+            }
+            finally
+            {
+                // CRITICAL: Dispose the process object
+                try
+                {
+                    process.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error disposing process");
+                }
             }
         }
     }
@@ -192,23 +216,65 @@ public class ProcessService : IProcessService
     {
         try
         {
+            // Use PowerShell Set-Clipboard to prevent command injection
+            // Escape single quotes in the text for PowerShell
+            var escapedText = text.Replace("'", "''");
             var psi = new ProcessStartInfo
             {
-                FileName = "cmd",
-                Arguments = $"/c echo {text}| clip",
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -Command \"Set-Clipboard -Value '{escapedText}'\"",
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                RedirectStandardError = true
             };
 
             using var process = Process.Start(psi);
             if (process != null)
             {
                 await process.WaitForExitAsync();
+                if (process.ExitCode != 0)
+                {
+                    var error = await process.StandardError.ReadToEndAsync();
+                    _logger.LogWarning("PowerShell clipboard command failed: {Error}", error);
+                }
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to copy to clipboard");
         }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+            return;
+
+        if (disposing)
+        {
+            lock (_lock)
+            {
+                foreach (var process in _trackedProcesses)
+                {
+                    try
+                    {
+                        process?.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error disposing tracked process");
+                    }
+                }
+                _trackedProcesses.Clear();
+            }
+        }
+
+        _disposed = true;
     }
 }

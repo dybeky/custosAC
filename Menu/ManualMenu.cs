@@ -91,7 +91,7 @@ public class ManualMenu
                     await _externalCheckService.CheckTelegramAsync();
                     break;
                 case 10:
-                    CopyKeywordsToClipboard();
+                    await CopyKeywordsToClipboard();
                     break;
             }
         }
@@ -302,11 +302,11 @@ public class ManualMenu
         _consoleUI.Pause();
     }
 
-    private void CopyKeywordsToClipboard()
+    private async Task CopyKeywordsToClipboard()
     {
         _consoleUI.PrintHeader();
         var keywords = _keywordMatcher.GetKeywordsString();
-        _processService.CopyToClipboardAsync(keywords).Wait();
+        await _processService.CopyToClipboardAsync(keywords);
         _consoleUI.Log("Ключевые слова скопированы в буфер обмена!", true);
         _consoleUI.PrintWarning("Теперь можно вставить (Ctrl+V) в Everything и другие программы");
         _consoleUI.Pause();
