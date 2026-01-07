@@ -1,9 +1,6 @@
-using System.Text.RegularExpressions;
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
 using CustosAC.Models;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using CustosAC.Services;
 
 namespace CustosAC.Scanner;
 
@@ -18,21 +15,18 @@ public class SteamScannerAsync : BaseScannerAsync
     public override string Description => "Парсинг Steam аккаунтов из loginusers.vdf";
 
     public SteamScannerAsync(
-        IFileSystemService fileSystem,
-        IKeywordMatcher keywordMatcher,
-        IConsoleUI consoleUI,
-        ILogger<SteamScannerAsync> logger,
-        IOptions<ScanSettings> scanSettings,
-        IOptions<PathSettings> pathSettings)
-        : base(fileSystem, keywordMatcher, consoleUI, logger, scanSettings)
+        KeywordMatcherService keywordMatcher,
+        ConsoleUIService consoleUI,
+        ScanSettings scanSettings,
+        PathSettings pathSettings)
+        : base(keywordMatcher, consoleUI, scanSettings)
     {
-        _pathSettings = pathSettings.Value;
+        _pathSettings = pathSettings;
     }
 
     public override async Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.Now;
-        Logger.LogInformation("Starting Steam accounts scan");
 
         try
         {
@@ -41,28 +35,21 @@ public class SteamScannerAsync : BaseScannerAsync
 
             if (vdfPath == null)
             {
-                Logger.LogWarning("loginusers.vdf not found");
                 return CreateErrorResult("Файл loginusers.vdf не найден", startTime);
             }
-
-            Logger.LogInformation("Found loginusers.vdf: {Path}", vdfPath);
 
             var accounts = await Task.Run(() => ParseSteamAccounts(vdfPath), cancellationToken);
 
             var findings = accounts.Select(a => $"SteamID: {a.SteamId} | Account: {a.AccountName} | Name: {a.PersonaName}").ToList();
 
-            Logger.LogInformation("Steam scan completed. Found {Count} accounts", accounts.Count);
-
             return CreateSuccessResult(findings, startTime);
         }
         catch (OperationCanceledException)
         {
-            Logger.LogWarning("Steam scan was cancelled");
             return CreateErrorResult("Scan cancelled", startTime);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Steam scan failed");
             return CreateErrorResult(ex.Message, startTime);
         }
     }
@@ -95,7 +82,7 @@ public class SteamScannerAsync : BaseScannerAsync
     {
         foreach (var path in paths)
         {
-            if (FileSystem.FileExists(path))
+            if (File.Exists(path))
             {
                 return path;
             }
@@ -109,7 +96,7 @@ public class SteamScannerAsync : BaseScannerAsync
 
         try
         {
-            var content = FileSystem.ReadAllText(vdfPath);
+            var content = File.ReadAllText(vdfPath);
             var lines = content.Split('\n');
 
             SteamAccount? currentAccount = null;
@@ -176,9 +163,9 @@ public class SteamScannerAsync : BaseScannerAsync
                 }
             }
         }
-        catch (Exception ex)
+        catch
         {
-            Logger.LogError(ex, "Error parsing loginusers.vdf");
+            // Error parsing file
         }
 
         return accounts;

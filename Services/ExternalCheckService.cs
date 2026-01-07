@@ -1,26 +1,24 @@
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
-using Microsoft.Extensions.Options;
 
 namespace CustosAC.Services;
 
 /// <summary>
 /// Сервис проверки внешних ресурсов (сайты, Telegram)
 /// </summary>
-public class ExternalCheckService : IExternalCheckService
+public class ExternalCheckService
 {
-    private readonly IConsoleUI _consoleUI;
-    private readonly IProcessService _processService;
+    private readonly ConsoleUIService _consoleUI;
+    private readonly ProcessService _processService;
     private readonly ExternalResourceSettings _externalSettings;
 
     public ExternalCheckService(
-        IConsoleUI consoleUI,
-        IProcessService processService,
-        IOptions<ExternalResourceSettings> externalSettings)
+        ConsoleUIService consoleUI,
+        ProcessService processService,
+        ExternalResourceSettings externalSettings)
     {
         _consoleUI = consoleUI;
         _processService = processService;
-        _externalSettings = externalSettings.Value;
+        _externalSettings = externalSettings;
     }
 
     public async Task CheckWebsitesAsync(bool silent = false)

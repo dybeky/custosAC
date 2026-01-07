@@ -1,20 +1,18 @@
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
-using Microsoft.Extensions.Options;
 
 namespace CustosAC.Services;
 
 /// <summary>
 /// Реализация сервиса сопоставления ключевых слов
 /// </summary>
-public class KeywordMatcherService : IKeywordMatcher
+public class KeywordMatcherService
 {
     private readonly string[] _keywords;
     private readonly string[] _keywordsLower;
 
-    public KeywordMatcherService(IOptions<KeywordSettings> settings)
+    public KeywordMatcherService(KeywordSettings settings)
     {
-        _keywords = settings.Value.Patterns;
+        _keywords = settings.Patterns;
         // Pre-compute lowercase versions ONCE for performance
         _keywordsLower = _keywords.Select(k => k.ToLowerInvariant()).ToArray();
     }

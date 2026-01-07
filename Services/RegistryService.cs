@@ -1,110 +1,132 @@
+using Microsoft.Win32;
 using System.Diagnostics;
-using CustosAC.Abstractions;
-using CustosAC.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using System.Runtime.Versioning;
+using System.Text;
 
 namespace CustosAC.Services;
 
 /// <summary>
-/// Реализация сервиса работы с реестром Windows
+/// Сервис для работы с реестром Windows через Microsoft.Win32.Registry API
 /// </summary>
-public class RegistryService : IRegistryService
+[SupportedOSPlatform("windows")]
+public class RegistryService
 {
-    private readonly IProcessService _processService;
-    private readonly ILogger<RegistryService> _logger;
-    private readonly AppSettings _settings;
-
-    public RegistryService(
-        IProcessService processService,
-        ILogger<RegistryService> logger,
-        IOptions<AppSettings> settings)
+    /// <summary>
+    /// Экспортировать ключ реестра в строку
+    /// </summary>
+    public bool ExportKeyToString(string keyPath, out string content)
     {
-        _processService = processService;
-        _logger = logger;
-        _settings = settings.Value;
-    }
-
-    public async Task<bool> ExportKeyAsync(string keyPath, string outputFile, CancellationToken ct = default)
-    {
+        content = string.Empty;
         try
         {
-            var args = $"export \"{keyPath}\" \"{outputFile}\" /y";
-            return await _processService.RunCommandAsync("reg", args, _settings.Timeouts.DefaultProcessTimeoutMs);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to export registry key: {KeyPath}", keyPath);
-            return false;
-        }
-    }
+            var (hive, subKey) = ParseRegistryPath(keyPath);
+            using var key = hive.OpenSubKey(subKey);
+            if (key == null) return false;
 
-    public async Task<bool> DeleteValueAsync(string keyPath, string valueName, CancellationToken ct = default)
-    {
-        try
-        {
-            var args = $"delete \"{keyPath}\" /v \"{valueName}\" /f";
-            return await _processService.RunCommandAsync("reg", args, _settings.Timeouts.DefaultProcessTimeoutMs);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete registry value: {KeyPath}\\{ValueName}", keyPath, valueName);
-            return false;
-        }
-    }
-
-    public async Task<bool> DeleteKeyAsync(string keyPath, CancellationToken ct = default)
-    {
-        try
-        {
-            var args = $"delete \"{keyPath}\" /f";
-            return await _processService.RunCommandAsync("reg", args, _settings.Timeouts.DefaultProcessTimeoutMs);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to delete registry key: {KeyPath}", keyPath);
-            return false;
-        }
-    }
-
-    public async Task OpenRegistryEditorAsync(string keyPath)
-    {
-        try
-        {
-            // Копируем путь в буфер обмена
-            await _processService.CopyToClipboardAsync(keyPath);
-
-            // Открываем regedit
-            var psi = new ProcessStartInfo
+            var sb = new StringBuilder();
+            foreach (var valueName in key.GetValueNames())
             {
-                FileName = "regedit",
-                UseShellExecute = true
-            };
-
-            var process = Process.Start(psi);
-            if (process != null)
-            {
-                _processService.TrackProcess(process);
+                var value = key.GetValue(valueName);
+                sb.AppendLine($"{valueName}={value}");
             }
-
-            _logger.LogInformation("Opened registry editor, path copied to clipboard: {KeyPath}", keyPath);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to open registry editor");
-        }
-    }
-
-    public async Task<bool> KeyExistsAsync(string keyPath, CancellationToken ct = default)
-    {
-        try
-        {
-            var args = $"query \"{keyPath}\"";
-            return await _processService.RunCommandAsync("reg", args, _settings.Timeouts.DefaultProcessTimeoutMs);
+            content = sb.ToString();
+            return true;
         }
         catch
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Удалить значение из реестра
+    /// </summary>
+    public bool DeleteValue(string keyPath, string valueName)
+    {
+        try
+        {
+            var (hive, subKey) = ParseRegistryPath(keyPath);
+            using var key = hive.OpenSubKey(subKey, writable: true);
+            key?.DeleteValue(valueName, throwOnMissingValue: false);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Удалить ключ реестра целиком
+    /// </summary>
+    public bool DeleteKey(string keyPath)
+    {
+        try
+        {
+            var (hive, subKey) = ParseRegistryPath(keyPath);
+            hive.DeleteSubKeyTree(subKey, throwOnMissingSubKey: false);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Проверить существование ключа реестра
+    /// </summary>
+    public bool KeyExists(string keyPath)
+    {
+        try
+        {
+            var (hive, subKey) = ParseRegistryPath(keyPath);
+            using var key = hive.OpenSubKey(subKey);
+            return key != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Открыть редактор реестра с копированием пути в буфер
+    /// </summary>
+    public async Task OpenRegistryEditorAsync(string keyPath, ProcessService processService)
+    {
+        await processService.CopyToClipboardAsync(keyPath);
+        var psi = new ProcessStartInfo
+        {
+            FileName = "regedit",
+            UseShellExecute = true
+        };
+        var process = Process.Start(psi);
+        if (process != null)
+        {
+            processService.TrackProcess(process);
+        }
+    }
+
+    /// <summary>
+    /// Распарсить путь реестра на hive и subKey
+    /// </summary>
+    private static (RegistryKey hive, string subKey) ParseRegistryPath(string path)
+    {
+        var parts = path.Split('\\', 2);
+        var hiveName = parts[0];
+        var subKey = parts.Length > 1 ? parts[1] : "";
+
+        RegistryKey hive = hiveName switch
+        {
+            "HKEY_CURRENT_USER" or "HKCU" => Registry.CurrentUser,
+            "HKEY_LOCAL_MACHINE" or "HKLM" => Registry.LocalMachine,
+            "HKEY_CLASSES_ROOT" or "HKCR" => Registry.ClassesRoot,
+            "HKEY_USERS" or "HKU" => Registry.Users,
+            "HKEY_CURRENT_CONFIG" or "HKCC" => Registry.CurrentConfig,
+            _ => throw new ArgumentException($"Unknown registry hive: {hiveName}")
+        };
+
+        return (hive, subKey);
     }
 }

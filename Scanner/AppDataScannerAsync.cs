@@ -1,8 +1,6 @@
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
 using CustosAC.Models;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using CustosAC.Services;
 
 namespace CustosAC.Scanner;
 
@@ -15,19 +13,16 @@ public class AppDataScannerAsync : BaseScannerAsync
     public override string Description => "Сканирование папок AppData (Roaming, Local, LocalLow)";
 
     public AppDataScannerAsync(
-        IFileSystemService fileSystem,
-        IKeywordMatcher keywordMatcher,
-        IConsoleUI consoleUI,
-        ILogger<AppDataScannerAsync> logger,
-        IOptions<ScanSettings> scanSettings)
-        : base(fileSystem, keywordMatcher, consoleUI, logger, scanSettings)
+        KeywordMatcherService keywordMatcher,
+        ConsoleUIService consoleUI,
+        ScanSettings scanSettings)
+        : base(keywordMatcher, consoleUI, scanSettings)
     {
     }
 
     public override async Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.Now;
-        Logger.LogInformation("Starting AppData scan");
 
         try
         {
@@ -48,13 +43,11 @@ public class AppDataScannerAsync : BaseScannerAsync
             // Параллельное сканирование всех папок AppData
             var scanTasks = folders.Select(async folder =>
             {
-                if (!FileSystem.DirectoryExists(folder.path))
+                if (!Directory.Exists(folder.path))
                 {
-                    Logger.LogDebug("Folder does not exist: {Path}", folder.path);
                     return new List<string>();
                 }
 
-                Logger.LogDebug("Scanning: {Folder}", folder.name);
                 return await ScanFolderParallelAsync(
                     folder.path,
                     ScanSettings.ExecutableExtensions,
@@ -65,18 +58,14 @@ public class AppDataScannerAsync : BaseScannerAsync
             var results = await Task.WhenAll(scanTasks);
             allResults = results.SelectMany(r => r).ToList();
 
-            Logger.LogInformation("AppData scan completed. Found {Count} suspicious items", allResults.Count);
-
             return CreateSuccessResult(allResults, startTime);
         }
         catch (OperationCanceledException)
         {
-            Logger.LogWarning("AppData scan was cancelled");
             return CreateErrorResult("Scan cancelled", startTime);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "AppData scan failed");
             return CreateErrorResult(ex.Message, startTime);
         }
     }

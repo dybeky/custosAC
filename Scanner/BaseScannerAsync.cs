@@ -2,8 +2,7 @@ using System.Collections.Concurrent;
 using CustosAC.Abstractions;
 using CustosAC.Configuration;
 using CustosAC.Models;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using CustosAC.Services;
 
 namespace CustosAC.Scanner;
 
@@ -12,10 +11,8 @@ namespace CustosAC.Scanner;
 /// </summary>
 public abstract class BaseScannerAsync : IScanner
 {
-    protected readonly IFileSystemService FileSystem;
-    protected readonly IKeywordMatcher KeywordMatcher;
-    protected readonly IConsoleUI ConsoleUI;
-    protected readonly ILogger Logger;
+    protected readonly KeywordMatcherService KeywordMatcher;
+    protected readonly ConsoleUIService ConsoleUI;
     protected readonly ScanSettings ScanSettings;
     protected readonly SemaphoreSlim _scanSemaphore;
 
@@ -23,22 +20,18 @@ public abstract class BaseScannerAsync : IScanner
     public abstract string Description { get; }
 
     protected BaseScannerAsync(
-        IFileSystemService fileSystem,
-        IKeywordMatcher keywordMatcher,
-        IConsoleUI consoleUI,
-        ILogger logger,
-        IOptions<ScanSettings> scanSettings)
+        KeywordMatcherService keywordMatcher,
+        ConsoleUIService consoleUI,
+        ScanSettings scanSettings)
     {
-        FileSystem = fileSystem;
         KeywordMatcher = keywordMatcher;
         ConsoleUI = consoleUI;
-        Logger = logger;
-        ScanSettings = scanSettings.Value;
+        ScanSettings = scanSettings;
 
         // Limit total concurrent I/O operations to prevent thread explosion
         _scanSemaphore = new SemaphoreSlim(
-            ScanSettings.MaxDegreeOfParallelism,
-            ScanSettings.MaxDegreeOfParallelism);
+            scanSettings.MaxDegreeOfParallelism,
+            scanSettings.MaxDegreeOfParallelism);
     }
 
     public abstract Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default);
@@ -59,9 +52,8 @@ public abstract class BaseScannerAsync : IScanner
     {
         var results = new ConcurrentBag<string>();
 
-        if (!FileSystem.DirectoryExists(path))
+        if (!Directory.Exists(path))
         {
-            Logger.LogWarning("Directory does not exist: {Path}", path);
             return results.ToList();
         }
 
@@ -84,7 +76,7 @@ public abstract class BaseScannerAsync : IScanner
         IEnumerable<string> entries;
         try
         {
-            entries = FileSystem.EnumerateFileSystemEntries(path);
+            entries = Directory.EnumerateFileSystemEntries(path);
         }
         catch (UnauthorizedAccessException)
         {
@@ -133,12 +125,11 @@ public abstract class BaseScannerAsync : IScanner
         HashSet<string> excludedDirs,
         CancellationToken ct)
     {
-        await _scanSemaphore.WaitAsync(ct);
         try
         {
-            var name = FileSystem.GetFileName(entry);
+            var name = Path.GetFileName(entry);
 
-            if (FileSystem.IsDirectory(entry))
+            if (Directory.Exists(entry))
             {
                 if (excludedDirs.Contains(name))
                     return;
@@ -148,9 +139,18 @@ public abstract class BaseScannerAsync : IScanner
                     results.Add(entry);
                 }
 
-                await ScanFolderRecursiveAsync(entry, extensions, maxDepth, currentDepth + 1, results, ct);
+                // Only use semaphore for recursive directory scanning to prevent thread explosion
+                await _scanSemaphore.WaitAsync(ct);
+                try
+                {
+                    await ScanFolderRecursiveAsync(entry, extensions, maxDepth, currentDepth + 1, results, ct);
+                }
+                finally
+                {
+                    _scanSemaphore.Release();
+                }
             }
-            else if (FileSystem.FileExists(entry))
+            else if (File.Exists(entry))
             {
                 if (KeywordMatcher.ContainsKeyword(name))
                 {
@@ -160,7 +160,7 @@ public abstract class BaseScannerAsync : IScanner
                     }
                     else
                     {
-                        var ext = FileSystem.GetExtension(entry).ToLowerInvariant();
+                        var ext = Path.GetExtension(entry).ToLowerInvariant();
                         if (extensions.Contains(ext))
                         {
                             results.Add(entry);
@@ -176,10 +176,6 @@ public abstract class BaseScannerAsync : IScanner
         catch (IOException)
         {
             // Expected: file in use or locked by another process
-        }
-        finally
-        {
-            _scanSemaphore.Release();
         }
     }
 

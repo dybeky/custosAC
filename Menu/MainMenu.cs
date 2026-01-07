@@ -1,30 +1,29 @@
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
-using Microsoft.Extensions.Options;
+using CustosAC.Services;
 
 namespace CustosAC.Menu;
 
 /// <summary>
-/// Главное меню с DI
+/// Главное меню
 /// </summary>
 public class MainMenu
 {
-    private readonly IConsoleUI _consoleUI;
-    private readonly IAdminService _adminService;
-    private readonly IProcessService _processService;
+    private readonly ConsoleUIService _consoleUI;
+    private readonly AdminService _adminService;
+    private readonly ProcessService _processService;
     private readonly AutoMenu _autoMenu;
     private readonly ManualMenu _manualMenu;
     private readonly ExtraMenu _extraMenu;
     private readonly AppSettings _settings;
 
     public MainMenu(
-        IConsoleUI consoleUI,
-        IAdminService adminService,
-        IProcessService processService,
+        ConsoleUIService consoleUI,
+        AdminService adminService,
+        ProcessService processService,
         AutoMenu autoMenu,
         ManualMenu manualMenu,
         ExtraMenu extraMenu,
-        IOptions<AppSettings> settings)
+        AppSettings settings)
     {
         _consoleUI = consoleUI;
         _adminService = adminService;
@@ -32,7 +31,7 @@ public class MainMenu
         _autoMenu = autoMenu;
         _manualMenu = manualMenu;
         _extraMenu = extraMenu;
-        _settings = settings.Value;
+        _settings = settings;
     }
 
     public async Task RunAsync()

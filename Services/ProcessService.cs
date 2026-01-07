@@ -1,26 +1,21 @@
 using System.Diagnostics;
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace CustosAC.Services;
 
 /// <summary>
-/// Реализация сервиса работы с процессами
+/// Сервис работы с процессами
 /// </summary>
-public class ProcessService : IProcessService, IDisposable
+public class ProcessService : IDisposable
 {
     private readonly List<Process> _trackedProcesses = new();
     private readonly object _lock = new();
-    private readonly ILogger<ProcessService> _logger;
     private readonly AppSettings _settings;
     private bool _disposed = false;
 
-    public ProcessService(ILogger<ProcessService> logger, IOptions<AppSettings> settings)
+    public ProcessService(AppSettings settings)
     {
-        _logger = logger;
-        _settings = settings.Value;
+        _settings = settings;
     }
 
     public void TrackProcess(Process process)
@@ -28,7 +23,6 @@ public class ProcessService : IProcessService, IDisposable
         lock (_lock)
         {
             _trackedProcesses.Add(process);
-            _logger.LogDebug("Tracking process: {ProcessName} (PID: {PID})", process.ProcessName, process.Id);
         }
     }
 
@@ -38,15 +32,13 @@ public class ProcessService : IProcessService, IDisposable
         {
             if (_trackedProcesses.Remove(process))
             {
-                _logger.LogDebug("Untracking process: PID {PID}", process.Id);
-                // Dispose when untracking
                 try
                 {
                     process.Dispose();
                 }
-                catch (Exception ex)
+                catch
                 {
-                    _logger.LogWarning(ex, "Error disposing untracked process");
+                    // Ignore disposal errors
                 }
             }
         }
@@ -68,27 +60,25 @@ public class ProcessService : IProcessService, IDisposable
                 if (!process.HasExited)
                 {
                     process.Kill();
-                    _logger.LogDebug("Killed process: PID {PID}", process.Id);
                 }
             }
             catch (InvalidOperationException)
             {
-                // Процесс уже завершён
+                // Process already exited
             }
-            catch (System.ComponentModel.Win32Exception ex)
+            catch (System.ComponentModel.Win32Exception)
             {
-                _logger.LogWarning(ex, "Failed to kill process PID {PID}", process.Id);
+                // Failed to kill process
             }
             finally
             {
-                // CRITICAL: Dispose the process object
                 try
                 {
                     process.Dispose();
                 }
-                catch (Exception ex)
+                catch
                 {
-                    _logger.LogWarning(ex, "Error disposing process");
+                    // Ignore disposal errors
                 }
             }
         }
@@ -118,12 +108,10 @@ public class ProcessService : IProcessService, IDisposable
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning("Command timed out: {Command}", command);
             return false;
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Failed to run command: {Command}", command);
             return false;
         }
     }
@@ -135,9 +123,8 @@ public class ProcessService : IProcessService, IDisposable
             var process = Process.Start(psi);
             return Task.FromResult(process);
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Failed to start process: {FileName}", psi.FileName);
             return Task.FromResult<Process?>(null);
         }
     }
@@ -160,9 +147,8 @@ public class ProcessService : IProcessService, IDisposable
             }
             return process;
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Failed to start tracked process: {FileName}", fileName);
             return null;
         }
     }
@@ -184,9 +170,9 @@ public class ProcessService : IProcessService, IDisposable
                 TrackProcess(process);
             }
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Failed to open folder: {Path}", path);
+            // Ignore errors
         }
     }
 
@@ -206,9 +192,9 @@ public class ProcessService : IProcessService, IDisposable
                 TrackProcess(process);
             }
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Failed to open URL: {Url}", url);
+            // Ignore errors
         }
     }
 
@@ -232,16 +218,11 @@ public class ProcessService : IProcessService, IDisposable
             if (process != null)
             {
                 await process.WaitForExitAsync();
-                if (process.ExitCode != 0)
-                {
-                    var error = await process.StandardError.ReadToEndAsync();
-                    _logger.LogWarning("PowerShell clipboard command failed: {Error}", error);
-                }
             }
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Failed to copy to clipboard");
+            // Ignore errors
         }
     }
 
@@ -266,9 +247,9 @@ public class ProcessService : IProcessService, IDisposable
                     {
                         process?.Dispose();
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        _logger.LogWarning(ex, "Error disposing tracked process");
+                        // Ignore disposal errors
                     }
                 }
                 _trackedProcesses.Clear();

@@ -1,30 +1,43 @@
 using CustosAC.Abstractions;
 using CustosAC.Configuration;
 using CustosAC.Models;
-using Microsoft.Extensions.Options;
+using CustosAC.Scanner;
+using CustosAC.Services;
 
 namespace CustosAC.Menu;
 
 /// <summary>
-/// Меню автоматической проверки с DI и async сканерами
+/// Меню автоматической проверки
 /// </summary>
 public class AutoMenu
 {
-    private readonly IConsoleUI _consoleUI;
-    private readonly IScannerFactory _scannerFactory;
-    private readonly IExternalCheckService _externalCheckService;
+    private readonly ConsoleUIService _consoleUI;
+    private readonly ExternalCheckService _externalCheckService;
     private readonly AppSettings _appSettings;
+    private readonly KeywordMatcherService _keywordMatcher;
+    private readonly ScanSettings _scanSettings;
+    private readonly PathSettings _pathSettings;
+    private readonly RegistrySettings _registrySettings;
+    private readonly RegistryService _registryService;
 
     public AutoMenu(
-        IConsoleUI consoleUI,
-        IScannerFactory scannerFactory,
-        IExternalCheckService externalCheckService,
-        IOptions<AppSettings> appSettings)
+        ConsoleUIService consoleUI,
+        ExternalCheckService externalCheckService,
+        AppSettings appSettings,
+        KeywordMatcherService keywordMatcher,
+        ScanSettings scanSettings,
+        PathSettings pathSettings,
+        RegistrySettings registrySettings,
+        RegistryService registryService)
     {
         _consoleUI = consoleUI;
-        _scannerFactory = scannerFactory;
         _externalCheckService = externalCheckService;
-        _appSettings = appSettings.Value;
+        _appSettings = appSettings;
+        _keywordMatcher = keywordMatcher;
+        _scanSettings = scanSettings;
+        _pathSettings = pathSettings;
+        _registrySettings = registrySettings;
+        _registryService = registryService;
     }
 
     public async Task RunAsync()
@@ -52,19 +65,19 @@ public class AutoMenu
                 case 0:
                     return;
                 case 1:
-                    await RunScannerAsync(_scannerFactory.CreateAppDataScanner());
+                    await RunScannerAsync(CreateAppDataScanner());
                     break;
                 case 2:
-                    await RunScannerAsync(_scannerFactory.CreateSystemScanner());
+                    await RunScannerAsync(CreateSystemScanner());
                     break;
                 case 3:
-                    await RunScannerAsync(_scannerFactory.CreatePrefetchScanner());
+                    await RunScannerAsync(CreatePrefetchScanner());
                     break;
                 case 4:
-                    await RunScannerAsync(_scannerFactory.CreateRegistryScanner());
+                    await RunScannerAsync(CreateRegistryScanner());
                     break;
                 case 5:
-                    await RunScannerAsync(_scannerFactory.CreateSteamScanner());
+                    await RunScannerAsync(CreateSteamScanner());
                     break;
                 case 6:
                     await _externalCheckService.CheckWebsitesAsync();
@@ -100,7 +113,15 @@ public class AutoMenu
         _consoleUI.PrintHeader();
         _consoleUI.PrintSectionHeader("ЗАПУСК ВСЕХ АВТОМАТИЧЕСКИХ ПРОВЕРОК");
 
-        var scanners = _scannerFactory.CreateAllScanners().ToArray();
+        var scanners = new IScanner[]
+        {
+            CreateAppDataScanner(),
+            CreateSystemScanner(),
+            CreatePrefetchScanner(),
+            CreateRegistryScanner(),
+            CreateSteamScanner()
+        };
+
         var allResults = new List<ScanResult>();
         var totalSteps = scanners.Length + 2;
 
@@ -182,5 +203,30 @@ public class AutoMenu
         }
 
         _consoleUI.PrintInfo($"Время сканирования: {result.Duration.TotalSeconds:F2}с");
+    }
+
+    private IScanner CreateAppDataScanner()
+    {
+        return new AppDataScannerAsync(_keywordMatcher, _consoleUI, _scanSettings);
+    }
+
+    private IScanner CreateSystemScanner()
+    {
+        return new SystemScannerAsync(_keywordMatcher, _consoleUI, _scanSettings, _pathSettings);
+    }
+
+    private IScanner CreatePrefetchScanner()
+    {
+        return new PrefetchScannerAsync(_keywordMatcher, _consoleUI, _scanSettings, _pathSettings);
+    }
+
+    private IScanner CreateRegistryScanner()
+    {
+        return new RegistryScannerAsync(_keywordMatcher, _consoleUI, _registryService, _scanSettings, _registrySettings);
+    }
+
+    private IScanner CreateSteamScanner()
+    {
+        return new SteamScannerAsync(_keywordMatcher, _consoleUI, _scanSettings, _pathSettings);
     }
 }

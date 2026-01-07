@@ -1,41 +1,38 @@
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
-using Microsoft.Extensions.Options;
+using CustosAC.Scanner;
+using CustosAC.Services;
 
 namespace CustosAC.Menu;
 
 /// <summary>
-/// Меню ручной проверки с DI
+/// Меню ручной проверки
 /// </summary>
 public class ManualMenu
 {
-    private readonly IConsoleUI _consoleUI;
-    private readonly IProcessService _processService;
-    private readonly IKeywordMatcher _keywordMatcher;
-    private readonly IRegistryService _registryService;
-    private readonly IScannerFactory _scannerFactory;
-    private readonly IExternalCheckService _externalCheckService;
+    private readonly ConsoleUIService _consoleUI;
+    private readonly ProcessService _processService;
+    private readonly KeywordMatcherService _keywordMatcher;
+    private readonly RegistryService _registryService;
+    private readonly ExternalCheckService _externalCheckService;
     private readonly PathSettings _pathSettings;
     private readonly RegistrySettings _registrySettings;
 
     public ManualMenu(
-        IConsoleUI consoleUI,
-        IProcessService processService,
-        IKeywordMatcher keywordMatcher,
-        IRegistryService registryService,
-        IScannerFactory scannerFactory,
-        IExternalCheckService externalCheckService,
-        IOptions<PathSettings> pathSettings,
-        IOptions<RegistrySettings> registrySettings)
+        ConsoleUIService consoleUI,
+        ProcessService processService,
+        KeywordMatcherService keywordMatcher,
+        RegistryService registryService,
+        ExternalCheckService externalCheckService,
+        PathSettings pathSettings,
+        RegistrySettings registrySettings)
     {
         _consoleUI = consoleUI;
         _processService = processService;
         _keywordMatcher = keywordMatcher;
         _registryService = registryService;
-        _scannerFactory = scannerFactory;
         _externalCheckService = externalCheckService;
-        _pathSettings = pathSettings.Value;
-        _registrySettings = registrySettings.Value;
+        _pathSettings = pathSettings;
+        _registrySettings = registrySettings;
     }
 
     public async Task RunAsync()
@@ -249,7 +246,7 @@ public class ManualMenu
         _consoleUI.PrintHeader();
         _consoleUI.PrintSectionHeader("ПРОВЕРКА STEAM АККАУНТОВ");
 
-        var scanner = _scannerFactory.CreateSteamScanner();
+        var scanner = new SteamScannerAsync(_keywordMatcher, _consoleUI, new ScanSettings(), _pathSettings);
         var result = await scanner.ScanAsync();
 
         if (result.Success && result.HasFindings)
@@ -328,7 +325,7 @@ public class ManualMenu
     private async Task OpenRegistryAsync(string path)
     {
         await _processService.CopyToClipboardAsync(path);
-        await _registryService.OpenRegistryEditorAsync(path);
+        await _registryService.OpenRegistryEditorAsync(path, _processService);
         _consoleUI.Log($"Путь скопирован: {path}", true);
         _consoleUI.PrintWarning("Вставьте путь в regedit (Ctrl+V)");
     }

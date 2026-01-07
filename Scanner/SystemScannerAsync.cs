@@ -1,8 +1,6 @@
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
 using CustosAC.Models;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using CustosAC.Services;
 
 namespace CustosAC.Scanner;
 
@@ -17,21 +15,18 @@ public class SystemScannerAsync : BaseScannerAsync
     public override string Description => "Сканирование системных папок (Windows, Program Files, Downloads)";
 
     public SystemScannerAsync(
-        IFileSystemService fileSystem,
-        IKeywordMatcher keywordMatcher,
-        IConsoleUI consoleUI,
-        ILogger<SystemScannerAsync> logger,
-        IOptions<ScanSettings> scanSettings,
-        IOptions<PathSettings> pathSettings)
-        : base(fileSystem, keywordMatcher, consoleUI, logger, scanSettings)
+        KeywordMatcherService keywordMatcher,
+        ConsoleUIService consoleUI,
+        ScanSettings scanSettings,
+        PathSettings pathSettings)
+        : base(keywordMatcher, consoleUI, scanSettings)
     {
-        _pathSettings = pathSettings.Value;
+        _pathSettings = pathSettings;
     }
 
     public override async Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.Now;
-        Logger.LogInformation("Starting System folders scan");
 
         try
         {
@@ -50,10 +45,9 @@ public class SystemScannerAsync : BaseScannerAsync
 
             // Параллельное сканирование всех системных папок
             var scanTasks = folders
-                .Where(f => FileSystem.DirectoryExists(f.path))
+                .Where(f => Directory.Exists(f.path))
                 .Select(async folder =>
                 {
-                    Logger.LogDebug("Scanning: {Path}", folder.path);
                     return await ScanFolderParallelAsync(
                         folder.path,
                         ScanSettings.ExecutableExtensions,
@@ -64,18 +58,14 @@ public class SystemScannerAsync : BaseScannerAsync
             var results = await Task.WhenAll(scanTasks);
             allResults = results.SelectMany(r => r).ToList();
 
-            Logger.LogInformation("System scan completed. Found {Count} suspicious items", allResults.Count);
-
             return CreateSuccessResult(allResults, startTime);
         }
         catch (OperationCanceledException)
         {
-            Logger.LogWarning("System scan was cancelled");
             return CreateErrorResult("Scan cancelled", startTime);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "System scan failed");
             return CreateErrorResult(ex.Message, startTime);
         }
     }

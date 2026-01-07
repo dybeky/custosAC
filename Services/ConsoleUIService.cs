@@ -1,21 +1,17 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
 using CustosAC.Constants;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace CustosAC.Services;
 
 /// <summary>
-/// Реализация консольного UI
+/// Сервис консольного UI
 /// </summary>
-public class ConsoleUIService : IConsoleUI
+public class ConsoleUIService
 {
     private bool _isAdmin;
     private readonly AppSettings _settings;
-    private readonly ILogger<ConsoleUIService> _logger;
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
@@ -29,10 +25,9 @@ public class ConsoleUIService : IConsoleUI
     private const int STD_OUTPUT_HANDLE = -11;
     private const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;
 
-    public ConsoleUIService(IOptions<AppSettings> settings, ILogger<ConsoleUIService> logger)
+    public ConsoleUIService(AppSettings settings)
     {
-        _settings = settings.Value;
-        _logger = logger;
+        _settings = settings;
     }
 
     public void SetAdminStatus(bool isAdmin)
@@ -69,9 +64,9 @@ public class ConsoleUIService : IConsoleUI
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.InputEncoding = System.Text.Encoding.UTF8;
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogDebug(ex, "Console setup partially failed - some features may not be supported");
+            // Console setup partially failed - some features may not be supported
         }
     }
 

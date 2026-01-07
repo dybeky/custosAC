@@ -1,10 +1,6 @@
-using CustosAC.Abstractions;
-using CustosAC.Extensions;
+using CustosAC.Configuration;
 using CustosAC.Menu;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using CustosAC.Services;
 
 namespace CustosAC;
 
@@ -12,36 +8,20 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        // Создаём хост с DI контейнером
-        var host = Host.CreateDefaultBuilder(args)
-            .ConfigureAppConfiguration((context, config) =>
-            {
-                config.SetBasePath(AppContext.BaseDirectory);
-                config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-            })
-            .ConfigureServices((context, services) =>
-            {
-                services.AddCustosACServices(context.Configuration);
-            })
-            .ConfigureLogging(logging =>
-            {
-                // Можно добавить файловое логирование при необходимости
-                logging.ClearProviders();
-            })
-            .Build();
+        // Загрузить конфигурацию из JSON
+        var configPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        var config = ConfigRoot.Load(configPath);
 
-        // Получаем сервисы
-        var adminService = host.Services.GetRequiredService<IAdminService>();
-        var consoleUI = host.Services.GetRequiredService<IConsoleUI>();
-        var processService = host.Services.GetRequiredService<IProcessService>();
+        // Создать основные сервисы (singleton)
+        var consoleUI = new ConsoleUIService(config.App);
+        var adminService = new AdminService();
+        var processService = new ProcessService(config.App);
 
-        // Проверка и запрос прав администратора
+        // Проверка прав администратора
         adminService.RunAsAdmin();
-
-        // Установка статуса администратора для UI
         consoleUI.SetAdminStatus(adminService.IsAdmin());
 
-        // Настройка обработчика закрытия консоли
+        // Настройка обработчика закрытия
         adminService.SetupCloseHandler(() =>
         {
             processService.KillAllTrackedProcesses();
@@ -49,14 +29,58 @@ class Program
             consoleUI.PrintCleanupMessage();
         });
 
-        // Настройка консоли (цвета, фиксированный размер)
+        // Настройка консоли
         consoleUI.SetupConsole();
 
-        // Запуск главного меню
-        var mainMenu = host.Services.GetRequiredService<MainMenu>();
+        // Создать stateless сервисы
+        var keywordMatcher = new KeywordMatcherService(config.Keywords);
+        var registryService = new RegistryService();
+        var externalCheckService = new ExternalCheckService(
+            consoleUI,
+            processService,
+            config.ExternalResources);
+
+        // Создать меню
+        var autoMenu = new AutoMenu(
+            consoleUI,
+            externalCheckService,
+            config.App,
+            keywordMatcher,
+            config.Scanning,
+            config.Paths,
+            config.Registry,
+            registryService);
+
+        var manualMenu = new ManualMenu(
+            consoleUI,
+            processService,
+            keywordMatcher,
+            registryService,
+            externalCheckService,
+            config.Paths,
+            config.Registry);
+
+        var extraMenu = new ExtraMenu(
+            consoleUI,
+            processService,
+            registryService,
+            config.Registry,
+            config.App,
+            config.ExternalResources);
+
+        var mainMenu = new MainMenu(
+            consoleUI,
+            adminService,
+            processService,
+            autoMenu,
+            manualMenu,
+            extraMenu,
+            config.App);
+
+        // Запустить приложение
         await mainMenu.RunAsync();
 
-        // Clean up on normal exit
+        // Очистка при нормальном выходе
         processService.Dispose();
     }
 }

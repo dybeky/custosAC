@@ -1,24 +1,15 @@
 using System.Diagnostics;
 using System.Runtime.Versioning;
 using System.Security.Principal;
-using CustosAC.Abstractions;
-using Microsoft.Extensions.Logging;
 
 namespace CustosAC.Services;
 
 /// <summary>
-/// Реализация сервиса административных привилегий
+/// Сервис административных привилегий
 /// </summary>
 [SupportedOSPlatform("windows")]
-public class AdminService : IAdminService
+public class AdminService
 {
-    private readonly ILogger<AdminService> _logger;
-
-    public AdminService(ILogger<AdminService> logger)
-    {
-        _logger = logger;
-    }
-
     public bool IsAdmin()
     {
         try
@@ -27,9 +18,8 @@ public class AdminService : IAdminService
             var principal = new WindowsPrincipal(identity);
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogWarning(ex, "Failed to check admin status");
             return false;
         }
     }
@@ -38,7 +28,6 @@ public class AdminService : IAdminService
     {
         if (IsAdmin())
         {
-            _logger.LogInformation("Already running as administrator");
             return;
         }
 
@@ -47,7 +36,6 @@ public class AdminService : IAdminService
             var exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
             if (string.IsNullOrEmpty(exePath))
             {
-                _logger.LogError("Could not determine executable path");
                 return;
             }
 
@@ -59,17 +47,16 @@ public class AdminService : IAdminService
                 WorkingDirectory = Environment.CurrentDirectory
             };
 
-            _logger.LogInformation("Restarting as administrator");
             Process.Start(startInfo);
             Environment.Exit(0);
         }
         catch (System.ComponentModel.Win32Exception)
         {
-            _logger.LogWarning("User cancelled UAC prompt");
+            // User cancelled UAC prompt
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
-            _logger.LogError(ex, "Failed to start elevated process");
+            // Failed to start elevated process
         }
     }
 
@@ -78,17 +65,13 @@ public class AdminService : IAdminService
         Console.CancelKeyPress += (sender, e) =>
         {
             e.Cancel = true;
-            _logger.LogInformation("Received Ctrl+C, cleaning up...");
             cleanupAction();
             Environment.Exit(0);
         };
 
         AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
         {
-            _logger.LogInformation("Process exiting, cleaning up...");
             cleanupAction();
         };
-
-        _logger.LogDebug("Close handlers registered");
     }
 }

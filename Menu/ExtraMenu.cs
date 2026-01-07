@@ -1,41 +1,36 @@
 using System.Diagnostics;
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
 using CustosAC.Constants;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using CustosAC.Services;
 
 namespace CustosAC.Menu;
 
 /// <summary>
-/// Меню экстра функций с DI
+/// Меню экстра функций
 /// </summary>
 public class ExtraMenu
 {
-    private readonly IConsoleUI _consoleUI;
-    private readonly IProcessService _processService;
-    private readonly IRegistryService _registryService;
-    private readonly ILogger<ExtraMenu> _logger;
+    private readonly ConsoleUIService _consoleUI;
+    private readonly ProcessService _processService;
+    private readonly RegistryService _registryService;
     private readonly RegistrySettings _registrySettings;
     private readonly AppSettings _appSettings;
     private readonly ExternalResourceSettings _externalSettings;
 
     public ExtraMenu(
-        IConsoleUI consoleUI,
-        IProcessService processService,
-        IRegistryService registryService,
-        ILogger<ExtraMenu> logger,
-        IOptions<RegistrySettings> registrySettings,
-        IOptions<AppSettings> appSettings,
-        IOptions<ExternalResourceSettings> externalSettings)
+        ConsoleUIService consoleUI,
+        ProcessService processService,
+        RegistryService registryService,
+        RegistrySettings registrySettings,
+        AppSettings appSettings,
+        ExternalResourceSettings externalSettings)
     {
         _consoleUI = consoleUI;
         _processService = processService;
         _registryService = registryService;
-        _logger = logger;
-        _registrySettings = registrySettings.Value;
-        _appSettings = appSettings.Value;
-        _externalSettings = externalSettings.Value;
+        _registrySettings = registrySettings;
+        _appSettings = appSettings;
+        _externalSettings = externalSettings;
     }
 
     public async Task RunAsync()
@@ -67,7 +62,7 @@ public class ExtraMenu
 
     private async Task EnableRegistryAsync()
     {
-        bool success = await _registryService.DeleteKeyAsync(_registrySettings.RegeditBlockPath);
+        bool success = _registryService.DeleteKey(_registrySettings.RegeditBlockPath);
 
         if (success)
         {
@@ -82,6 +77,7 @@ public class ExtraMenu
             _consoleUI.PrintWarning("Возможно реестр уже включен или требуются права администратора");
         }
         _consoleUI.Pause();
+        await Task.CompletedTask;
     }
 
     private async Task EnableSystemSettingsAsync()
@@ -95,7 +91,7 @@ public class ExtraMenu
         _consoleUI.Log("Удаляем блокировки реестра...", true);
         foreach (var (key, value) in RegistryConstants.ValuesToDelete)
         {
-            if (await DeleteRegistryValueAsync(key, value))
+            if (DeleteRegistryValue(key, value))
                 unlockedCount++;
         }
 
@@ -104,7 +100,7 @@ public class ExtraMenu
         _consoleUI.Log("Удаляем политики полностью...", true);
         foreach (var key in RegistryConstants.KeysToDelete)
         {
-            if (await _registryService.DeleteKeyAsync(key))
+            if (_registryService.DeleteKey(key))
             {
                 _consoleUI.Log($"  + Удалена ветка: {key}", true);
                 unlockedCount++;
@@ -145,9 +141,9 @@ public class ExtraMenu
         _consoleUI.Pause();
     }
 
-    private async Task<bool> DeleteRegistryValueAsync(string key, string value)
+    private bool DeleteRegistryValue(string key, string value)
     {
-        var result = await _registryService.DeleteValueAsync(key, value);
+        var result = _registryService.DeleteValue(key, value);
         if (result)
         {
             string loc = key.StartsWith("HKCU") ? "HKCU" : "HKLM";
@@ -166,9 +162,9 @@ public class ExtraMenu
                 _consoleUI.Log($"  + Перезапущена служба: {name}", true);
             }
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogDebug(ex, "Service {ServiceName} restart failed - expected if service is not running", name);
+            // Service restart failed - expected if service is not running
         }
     }
 

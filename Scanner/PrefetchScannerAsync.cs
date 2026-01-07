@@ -1,8 +1,6 @@
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
 using CustosAC.Models;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using CustosAC.Services;
 
 namespace CustosAC.Scanner;
 
@@ -17,29 +15,25 @@ public class PrefetchScannerAsync : BaseScannerAsync
     public override string Description => "Сканирование папки Prefetch для поиска следов запуска программ";
 
     public PrefetchScannerAsync(
-        IFileSystemService fileSystem,
-        IKeywordMatcher keywordMatcher,
-        IConsoleUI consoleUI,
-        ILogger<PrefetchScannerAsync> logger,
-        IOptions<ScanSettings> scanSettings,
-        IOptions<PathSettings> pathSettings)
-        : base(fileSystem, keywordMatcher, consoleUI, logger, scanSettings)
+        KeywordMatcherService keywordMatcher,
+        ConsoleUIService consoleUI,
+        ScanSettings scanSettings,
+        PathSettings pathSettings)
+        : base(keywordMatcher, consoleUI, scanSettings)
     {
-        _pathSettings = pathSettings.Value;
+        _pathSettings = pathSettings;
     }
 
     public override async Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.Now;
-        Logger.LogInformation("Starting Prefetch scan");
 
         try
         {
             var prefetchPath = _pathSettings.Windows.PrefetchPath;
 
-            if (!FileSystem.DirectoryExists(prefetchPath))
+            if (!Directory.Exists(prefetchPath))
             {
-                Logger.LogWarning("Prefetch folder not found: {Path}", prefetchPath);
                 return CreateErrorResult("Папка Prefetch не найдена или недоступна", startTime);
             }
 
@@ -49,44 +43,40 @@ public class PrefetchScannerAsync : BaseScannerAsync
             {
                 try
                 {
-                    var files = FileSystem.EnumerateFiles(prefetchPath, "*.pf");
+                    var files = Directory.EnumerateFiles(prefetchPath, "*.pf");
 
                     foreach (var file in files)
                     {
                         if (cancellationToken.IsCancellationRequested)
                             break;
 
-                        var fileName = FileSystem.GetFileName(file);
+                        var fileName = Path.GetFileName(file);
 
                         if (KeywordMatcher.ContainsKeyword(fileName))
                         {
-                            var fileInfo = FileSystem.GetFileInfo(file);
+                            var fileInfo = new FileInfo(file);
                             suspiciousFiles.Add($"{file} (Modified: {fileInfo.LastWriteTime:dd.MM.yyyy HH:mm:ss})");
                         }
                     }
                 }
-                catch (UnauthorizedAccessException ex)
+                catch (UnauthorizedAccessException)
                 {
-                    Logger.LogWarning(ex, "Access denied to Prefetch folder");
+                    // Access denied
                 }
-                catch (IOException ex)
+                catch (IOException)
                 {
-                    Logger.LogWarning(ex, "IO error reading Prefetch folder");
+                    // IO error
                 }
             }, cancellationToken);
-
-            Logger.LogInformation("Prefetch scan completed. Found {Count} suspicious items", suspiciousFiles.Count);
 
             return CreateSuccessResult(suspiciousFiles, startTime);
         }
         catch (OperationCanceledException)
         {
-            Logger.LogWarning("Prefetch scan was cancelled");
             return CreateErrorResult("Scan cancelled", startTime);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Prefetch scan failed");
             return CreateErrorResult(ex.Message, startTime);
         }
     }
