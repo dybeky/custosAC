@@ -16,6 +16,7 @@ public class ManualMenu
     private readonly ExternalCheckService _externalCheckService;
     private readonly PathSettings _pathSettings;
     private readonly RegistrySettings _registrySettings;
+    private readonly ScanSettings _scanSettings;
 
     public ManualMenu(
         ConsoleUIService consoleUI,
@@ -24,7 +25,8 @@ public class ManualMenu
         RegistryService registryService,
         ExternalCheckService externalCheckService,
         PathSettings pathSettings,
-        RegistrySettings registrySettings)
+        RegistrySettings registrySettings,
+        ScanSettings scanSettings)
     {
         _consoleUI = consoleUI;
         _processService = processService;
@@ -33,6 +35,7 @@ public class ManualMenu
         _externalCheckService = externalCheckService;
         _pathSettings = pathSettings;
         _registrySettings = registrySettings;
+        _scanSettings = scanSettings;
     }
 
     public async Task RunAsync()
@@ -246,7 +249,7 @@ public class ManualMenu
         _consoleUI.PrintHeader();
         _consoleUI.PrintSectionHeader("ПРОВЕРКА STEAM АККАУНТОВ");
 
-        var scanner = new SteamScannerAsync(_keywordMatcher, _consoleUI, new ScanSettings(), _pathSettings);
+        var scanner = new SteamScannerAsync(_keywordMatcher, _consoleUI, _scanSettings, _pathSettings);
         var result = await scanner.ScanAsync();
 
         if (result.Success && result.HasFindings)

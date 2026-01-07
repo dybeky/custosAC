@@ -92,79 +92,269 @@ public class AutoMenu
         }
     }
 
-    private async Task RunScannerAsync(IScanner scanner)
+    private async Task RunScannerAsync(BaseScannerAsync scanner)
     {
-        _consoleUI.PrintHeader();
-        _consoleUI.PrintSectionHeader(scanner.Name);
-        _consoleUI.PrintInfo(scanner.Description);
-        _consoleUI.PrintEmptyLine();
+        using (scanner)
+        {
+            _consoleUI.PrintHeader();
+            _consoleUI.PrintSectionHeader(scanner.Name);
+            _consoleUI.PrintInfo(scanner.Description);
+            _consoleUI.PrintEmptyLine();
 
-        _consoleUI.Log("Начинается сканирование...", true);
-        _consoleUI.PrintEmptyLine();
+            _consoleUI.Log("Начинается сканирование...", true);
+            _consoleUI.PrintEmptyLine();
 
-        var result = await scanner.ScanAsync();
+            var result = await scanner.ScanAsync();
 
-        DisplayScanResult(result);
+            DisplayScanResult(result);
+        }
         _consoleUI.Pause();
     }
 
     private async Task RunAllScansAsync()
     {
+        var startTime = DateTime.Now;
+        var allResults = new List<(string name, ScanResult result)>();
+
+        // 1. AppData
         _consoleUI.PrintHeader();
-        _consoleUI.PrintSectionHeader("ЗАПУСК ВСЕХ АВТОМАТИЧЕСКИХ ПРОВЕРОК");
+        _consoleUI.PrintBoxOrange(new[] { "ПОЛНАЯ ПРОВЕРКА [1/7]", "", "Сканирование AppData..." });
+        _consoleUI.PrintEmptyLine();
 
-        var scanners = new IScanner[]
+        using (var scanner = CreateAppDataScanner())
         {
-            CreateAppDataScanner(),
-            CreateSystemScanner(),
-            CreatePrefetchScanner(),
-            CreateRegistryScanner(),
-            CreateSteamScanner()
-        };
-
-        var allResults = new List<ScanResult>();
-        var totalSteps = scanners.Length + 2;
-
-        for (int i = 0; i < scanners.Length; i++)
-        {
-            var scanner = scanners[i];
-            _consoleUI.PrintWarning($"[{i + 1}/{totalSteps}] {scanner.Name}...");
-
             var result = await scanner.ScanAsync();
-            allResults.Add(result);
-
-            if (result.HasFindings)
-            {
-                _consoleUI.PrintError($"  Найдено: {result.Count}");
-            }
-            else
-            {
-                _consoleUI.PrintSuccess("  Чисто");
-            }
-            _consoleUI.PrintEmptyLine();
+            allResults.Add(("AppData", result));
+            DisplayStepResult("AppData", result);
         }
+        WaitForNext("Нажмите Enter для следующей проверки...");
 
-        // Проверка сайтов и Telegram
-        _consoleUI.PrintWarning($"[{scanners.Length + 1}/{totalSteps}] Проверка сайтов...");
-        await _externalCheckService.CheckWebsitesAsync(silent: true);
-
-        _consoleUI.PrintWarning($"[{totalSteps}/{totalSteps}] Проверка Telegram...");
-        await _externalCheckService.CheckTelegramAsync(silent: true);
-
-        // Итог
+        // 2. System
         _consoleUI.PrintHeader();
-        _consoleUI.PrintSectionHeader("ВСЕ ПРОВЕРКИ ЗАВЕРШЕНЫ");
+        _consoleUI.PrintBoxOrange(new[] { "ПОЛНАЯ ПРОВЕРКА [2/7]", "", "Сканирование системных папок..." });
+        _consoleUI.PrintEmptyLine();
 
-        var totalFindings = allResults.Sum(r => r.Count);
-        if (totalFindings > 0)
+        using (var scanner = CreateSystemScanner())
         {
-            _consoleUI.Log($"Всего найдено подозрительных элементов: {totalFindings}", false);
+            var result = await scanner.ScanAsync();
+            allResults.Add(("System", result));
+            DisplayStepResult("Системные папки", result);
+        }
+        WaitForNext("Нажмите Enter для следующей проверки...");
+
+        // 3. Prefetch
+        _consoleUI.PrintHeader();
+        _consoleUI.PrintBoxOrange(new[] { "ПОЛНАЯ ПРОВЕРКА [3/7]", "", "Сканирование Prefetch..." });
+        _consoleUI.PrintEmptyLine();
+
+        using (var scanner = CreatePrefetchScanner())
+        {
+            var result = await scanner.ScanAsync();
+            allResults.Add(("Prefetch", result));
+            DisplayStepResult("Prefetch", result);
+        }
+        WaitForNext("Нажмите Enter для следующей проверки...");
+
+        // 4. Registry
+        _consoleUI.PrintHeader();
+        _consoleUI.PrintBoxOrange(new[] { "ПОЛНАЯ ПРОВЕРКА [4/7]", "", "Поиск в реестре..." });
+        _consoleUI.PrintEmptyLine();
+
+        using (var scanner = CreateRegistryScanner())
+        {
+            var result = await scanner.ScanAsync();
+            allResults.Add(("Registry", result));
+            DisplayStepResult("Реестр", result);
+        }
+        WaitForNext("Нажмите Enter для следующей проверки...");
+
+        // 5. Steam
+        _consoleUI.PrintHeader();
+        _consoleUI.PrintBoxOrange(new[] { "ПОЛНАЯ ПРОВЕРКА [5/7]", "", "Парсинг Steam аккаунтов..." });
+        _consoleUI.PrintEmptyLine();
+
+        using (var scanner = CreateSteamScanner())
+        {
+            var result = await scanner.ScanAsync();
+            allResults.Add(("Steam", result));
+            DisplayStepResult("Steam", result);
+        }
+        WaitForNext("Нажмите Enter для следующей проверки...");
+
+        // 6. Websites
+        _consoleUI.PrintHeader();
+        _consoleUI.PrintBoxOrange(new[] { "ПОЛНАЯ ПРОВЕРКА [6/7]", "", "Проверка сайтов..." });
+        _consoleUI.PrintEmptyLine();
+        await _externalCheckService.CheckWebsitesAsync(silent: false);
+        WaitForNext("Нажмите Enter для следующей проверки...");
+
+        // 7. Telegram
+        _consoleUI.PrintHeader();
+        _consoleUI.PrintBoxOrange(new[] { "ПОЛНАЯ ПРОВЕРКА [7/7]", "", "Проверка Telegram..." });
+        _consoleUI.PrintEmptyLine();
+        await _externalCheckService.CheckTelegramAsync(silent: false);
+        WaitForNext("Нажмите Enter для просмотра итогов...");
+
+        // Итоговый отчёт
+        ShowFinalReport(allResults, startTime);
+    }
+
+    private void DisplayStepResult(string name, ScanResult result)
+    {
+        _consoleUI.PrintEmptyLine();
+        _consoleUI.PrintSeparator();
+        _consoleUI.PrintEmptyLine();
+
+        if (result.HasFindings)
+        {
+            _consoleUI.PrintError($"[{name}] НАЙДЕНО: {result.Count} элементов");
+            _consoleUI.PrintEmptyLine();
+
+            // Показываем первые 10
+            foreach (var finding in result.Findings.Take(10))
+            {
+                _consoleUI.PrintListItem(finding);
+            }
+
+            // Если больше 10 - предлагаем посмотреть все
+            if (result.Count > 10)
+            {
+                _consoleUI.PrintEmptyLine();
+                _consoleUI.PrintWarning($"... и ещё {result.Count - 10} элементов");
+                _consoleUI.PrintEmptyLine();
+                _consoleUI.PrintHighlight("[V] - Показать все  |  [Enter] - Продолжить");
+
+                var input = Console.ReadLine()?.ToLower().Trim();
+                if (input == "v")
+                {
+                    ShowAllFindings(name, result.Findings);
+                }
+            }
         }
         else
         {
-            _consoleUI.Log("Подозрительных элементов не найдено!", true);
+            _consoleUI.PrintSuccess($"[{name}] ЧИСТО - подозрительных элементов не найдено");
         }
 
+        _consoleUI.PrintEmptyLine();
+        _consoleUI.PrintInfo($"Время: {result.Duration.TotalSeconds:F2} сек");
+    }
+
+    private void ShowAllFindings(string name, List<string> findings)
+    {
+        int page = 0;
+        int itemsPerPage = _appSettings.Console.ItemsPerPage;
+        int totalPages = (findings.Count + itemsPerPage - 1) / itemsPerPage;
+
+        while (true)
+        {
+            _consoleUI.PrintHeader();
+            _consoleUI.PrintSectionHeader($"{name} - Все результаты (стр. {page + 1}/{totalPages})");
+            _consoleUI.PrintEmptyLine();
+
+            var pageItems = findings.Skip(page * itemsPerPage).Take(itemsPerPage).ToList();
+            int startNum = page * itemsPerPage + 1;
+
+            for (int i = 0; i < pageItems.Count; i++)
+            {
+                Console.WriteLine($"  [{startNum + i}] {pageItems[i]}");
+            }
+
+            _consoleUI.PrintEmptyLine();
+            _consoleUI.PrintSeparator();
+            _consoleUI.PrintEmptyLine();
+
+            // Навигация
+            var nav = new List<string>();
+            if (page > 0) nav.Add("[P] Назад");
+            if (page < totalPages - 1) nav.Add("[N] Вперёд");
+            nav.Add("[Q] Выход");
+
+            _consoleUI.PrintHighlight(string.Join("  |  ", nav));
+
+            var input = Console.ReadLine()?.ToLower().Trim();
+
+            if (input == "n" && page < totalPages - 1)
+                page++;
+            else if (input == "p" && page > 0)
+                page--;
+            else if (input == "q" || string.IsNullOrEmpty(input))
+                break;
+        }
+    }
+
+    private void WaitForNext(string message)
+    {
+        _consoleUI.PrintEmptyLine();
+        _consoleUI.PrintHighlight(message);
+        Console.ReadLine();
+    }
+
+    private void ShowFinalReport(List<(string name, ScanResult result)> allResults, DateTime startTime)
+    {
+        var elapsed = DateTime.Now - startTime;
+        var totalFindings = allResults.Sum(r => r.result.Count);
+
+        _consoleUI.PrintHeader();
+
+        if (totalFindings > 0)
+        {
+            _consoleUI.PrintBox(new[]
+            {
+                "╔════════════════════════════════════════════╗",
+                "║           ИТОГОВЫЙ ОТЧЁТ                   ║",
+                "║      ОБНАРУЖЕНЫ ПОДОЗРИТЕЛЬНЫЕ ЭЛЕМЕНТЫ    ║",
+                "╚════════════════════════════════════════════╝"
+            }, false);
+        }
+        else
+        {
+            _consoleUI.PrintBox(new[]
+            {
+                "╔════════════════════════════════════════════╗",
+                "║           ИТОГОВЫЙ ОТЧЁТ                   ║",
+                "║              ВСЁ ЧИСТО!                    ║",
+                "╚════════════════════════════════════════════╝"
+            }, true);
+        }
+
+        _consoleUI.PrintEmptyLine();
+        _consoleUI.PrintInfo($"Общее время проверки: {elapsed.TotalSeconds:F1} сек");
+        _consoleUI.PrintEmptyLine();
+
+        _consoleUI.PrintSectionHeader("РЕЗУЛЬТАТЫ ПО КАТЕГОРИЯМ");
+        _consoleUI.PrintEmptyLine();
+
+        foreach (var (name, result) in allResults)
+        {
+            if (result.HasFindings)
+            {
+                _consoleUI.PrintError($"  ✗ {name}: {result.Count} найдено");
+            }
+            else
+            {
+                _consoleUI.PrintSuccess($"  ✓ {name}: чисто");
+            }
+        }
+
+        _consoleUI.PrintEmptyLine();
+        _consoleUI.PrintSeparator();
+        _consoleUI.PrintEmptyLine();
+
+        if (totalFindings > 0)
+        {
+            _consoleUI.PrintError($"  ВСЕГО НАЙДЕНО: {totalFindings} подозрительных элементов");
+            _consoleUI.PrintEmptyLine();
+            _consoleUI.PrintWarning("  Рекомендуется проверить найденные элементы вручную.");
+        }
+        else
+        {
+            _consoleUI.PrintSuccess("  СИСТЕМА ЧИСТА!");
+            _consoleUI.PrintEmptyLine();
+            _consoleUI.PrintInfo("  Подозрительных элементов не обнаружено.");
+        }
+
+        _consoleUI.PrintEmptyLine();
         _consoleUI.Pause();
     }
 
@@ -205,27 +395,27 @@ public class AutoMenu
         _consoleUI.PrintInfo($"Время сканирования: {result.Duration.TotalSeconds:F2}с");
     }
 
-    private IScanner CreateAppDataScanner()
+    private BaseScannerAsync CreateAppDataScanner()
     {
         return new AppDataScannerAsync(_keywordMatcher, _consoleUI, _scanSettings);
     }
 
-    private IScanner CreateSystemScanner()
+    private BaseScannerAsync CreateSystemScanner()
     {
         return new SystemScannerAsync(_keywordMatcher, _consoleUI, _scanSettings, _pathSettings);
     }
 
-    private IScanner CreatePrefetchScanner()
+    private BaseScannerAsync CreatePrefetchScanner()
     {
         return new PrefetchScannerAsync(_keywordMatcher, _consoleUI, _scanSettings, _pathSettings);
     }
 
-    private IScanner CreateRegistryScanner()
+    private BaseScannerAsync CreateRegistryScanner()
     {
         return new RegistryScannerAsync(_keywordMatcher, _consoleUI, _registryService, _scanSettings, _registrySettings);
     }
 
-    private IScanner CreateSteamScanner()
+    private BaseScannerAsync CreateSteamScanner()
     {
         return new SteamScannerAsync(_keywordMatcher, _consoleUI, _scanSettings, _pathSettings);
     }

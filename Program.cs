@@ -58,7 +58,8 @@ class Program
             registryService,
             externalCheckService,
             config.Paths,
-            config.Registry);
+            config.Registry,
+            config.Scanning);
 
         var extraMenu = new ExtraMenu(
             consoleUI,
