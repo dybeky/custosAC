@@ -19,12 +19,34 @@ public class ConfigRoot
     /// </summary>
     public static ConfigRoot Load(string jsonPath)
     {
-        var json = File.ReadAllText(jsonPath);
-        return JsonSerializer.Deserialize<ConfigRoot>(json, new JsonSerializerOptions
+        try
         {
-            PropertyNameCaseInsensitive = true,
-            ReadCommentHandling = JsonCommentHandling.Skip,
-            AllowTrailingCommas = true
-        }) ?? new ConfigRoot();
+            if (!File.Exists(jsonPath))
+            {
+                Console.WriteLine($"Конфигурационный файл не найден: {jsonPath}");
+                Console.WriteLine("Используются настройки по умолчанию.");
+                return new ConfigRoot();
+            }
+
+            var json = File.ReadAllText(jsonPath);
+            return JsonSerializer.Deserialize<ConfigRoot>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                ReadCommentHandling = JsonCommentHandling.Skip,
+                AllowTrailingCommas = true
+            }) ?? new ConfigRoot();
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine($"Ошибка парсинга конфигурации: {ex.Message}");
+            Console.WriteLine("Используются настройки по умолчанию.");
+            return new ConfigRoot();
+        }
+        catch (IOException ex)
+        {
+            Console.WriteLine($"Ошибка чтения конфигурации: {ex.Message}");
+            Console.WriteLine("Используются настройки по умолчанию.");
+            return new ConfigRoot();
+        }
     }
 }

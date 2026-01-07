@@ -10,6 +10,8 @@ namespace CustosAC.Services;
 [SupportedOSPlatform("windows")]
 public class AdminService
 {
+    private int _cleanupExecuted = 0;
+
     public bool IsAdmin()
     {
         try
@@ -65,13 +67,21 @@ public class AdminService
         Console.CancelKeyPress += (sender, e) =>
         {
             e.Cancel = true;
-            cleanupAction();
+            // Use Interlocked to ensure cleanup runs only once
+            if (Interlocked.Exchange(ref _cleanupExecuted, 1) == 0)
+            {
+                cleanupAction();
+            }
             Environment.Exit(0);
         };
 
         AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
         {
-            cleanupAction();
+            // Use Interlocked to ensure cleanup runs only once
+            if (Interlocked.Exchange(ref _cleanupExecuted, 1) == 0)
+            {
+                cleanupAction();
+            }
         };
     }
 }

@@ -86,6 +86,7 @@ public class ProcessService : IDisposable
 
     public async Task<bool> RunCommandAsync(string command, string? args = null, int timeoutMs = 10000)
     {
+        Process? process = null;
         try
         {
             var psi = new ProcessStartInfo
@@ -98,7 +99,7 @@ public class ProcessService : IDisposable
                 RedirectStandardError = true
             };
 
-            using var process = Process.Start(psi);
+            process = Process.Start(psi);
             if (process == null)
                 return false;
 
@@ -108,11 +109,24 @@ public class ProcessService : IDisposable
         }
         catch (OperationCanceledException)
         {
+            // Timeout - kill the process to prevent resource leak
+            try
+            {
+                if (process != null && !process.HasExited)
+                {
+                    process.Kill();
+                }
+            }
+            catch { }
             return false;
         }
         catch
         {
             return false;
+        }
+        finally
+        {
+            process?.Dispose();
         }
     }
 
@@ -200,6 +214,7 @@ public class ProcessService : IDisposable
 
     public async Task CopyToClipboardAsync(string text)
     {
+        Process? process = null;
         try
         {
             // Use PowerShell Set-Clipboard to prevent command injection
@@ -214,15 +229,35 @@ public class ProcessService : IDisposable
                 RedirectStandardError = true
             };
 
-            using var process = Process.Start(psi);
+            process = Process.Start(psi);
             if (process != null)
             {
-                await process.WaitForExitAsync();
+                using var cts = new CancellationTokenSource(_settings.Timeouts.PowerShellTimeoutMs);
+                try
+                {
+                    await process.WaitForExitAsync(cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Timeout - kill the process
+                    try
+                    {
+                        if (!process.HasExited)
+                        {
+                            process.Kill();
+                        }
+                    }
+                    catch { }
+                }
             }
         }
         catch
         {
             // Ignore errors
+        }
+        finally
+        {
+            process?.Dispose();
         }
     }
 

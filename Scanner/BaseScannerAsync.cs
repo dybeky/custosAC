@@ -9,12 +9,13 @@ namespace CustosAC.Scanner;
 /// <summary>
 /// Базовый абстрактный класс для async сканеров
 /// </summary>
-public abstract class BaseScannerAsync : IScanner
+public abstract class BaseScannerAsync : IScanner, IDisposable
 {
     protected readonly KeywordMatcherService KeywordMatcher;
     protected readonly ConsoleUIService ConsoleUI;
     protected readonly ScanSettings ScanSettings;
     protected readonly SemaphoreSlim _scanSemaphore;
+    private bool _disposed;
 
     public abstract string Name { get; }
     public abstract string Description { get; }
@@ -208,5 +209,24 @@ public abstract class BaseScannerAsync : IScanner
             StartTime = startTime,
             EndTime = DateTime.Now
         };
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+            return;
+
+        if (disposing)
+        {
+            _scanSemaphore?.Dispose();
+        }
+
+        _disposed = true;
     }
 }
