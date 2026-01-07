@@ -5,7 +5,7 @@ using CustosAC.Services;
 namespace CustosAC.Scanner;
 
 /// <summary>
-/// Async сканер реестра
+/// Сканер реестра Windows
 /// </summary>
 public class RegistryScannerAsync : BaseScannerAsync
 {
@@ -27,55 +27,34 @@ public class RegistryScannerAsync : BaseScannerAsync
         _registrySettings = registrySettings;
     }
 
-    public override async Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
+    public override Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.Now;
 
-        var allFindings = new List<string>();
-
         try
         {
-            foreach (var regKey in _registrySettings.ScanKeys)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
+            var findings = _registrySettings.ScanKeys
+                .SelectMany(regKey => ScanRegistryKey(regKey))
+                .ToList();
 
-                try
-                {
-                    if (_registryService.ExportKeyToString(regKey.Path, out var content))
-                    {
-                        var lines = content.Split('\n');
-
-                        foreach (var line in lines)
-                        {
-                            var trimmedLine = line.Trim();
-                            if (string.IsNullOrEmpty(trimmedLine))
-                            {
-                                continue;
-                            }
-
-                            if (KeywordMatcher.ContainsKeyword(line))
-                            {
-                                allFindings.Add($"[{regKey.Name}] {trimmedLine}");
-                            }
-                        }
-                    }
-                }
-                catch
-                {
-                    // Ignore errors for individual keys
-                }
-            }
-
-            return CreateSuccessResult(allFindings, startTime);
-        }
-        catch (OperationCanceledException)
-        {
-            return CreateErrorResult("Scan cancelled", startTime);
+            return Task.FromResult(CreateSuccessResult(findings, startTime));
         }
         catch (Exception ex)
         {
-            return CreateErrorResult(ex.Message, startTime);
+            return Task.FromResult(CreateErrorResult(ex.Message, startTime));
+        }
+    }
+
+    private IEnumerable<string> ScanRegistryKey(RegistryScanKey regKey)
+    {
+        if (!_registryService.ExportKeyToString(regKey.Path, out var content))
+            yield break;
+
+        foreach (var line in content.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (!string.IsNullOrEmpty(trimmed) && KeywordMatcher.ContainsKeyword(line))
+                yield return $"[{regKey.Name}] {trimmed}";
         }
     }
 }

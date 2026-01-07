@@ -5,7 +5,7 @@ using CustosAC.Services;
 namespace CustosAC.Scanner;
 
 /// <summary>
-/// Async сканер Prefetch
+/// Сканер Prefetch папки
 /// </summary>
 public class PrefetchScannerAsync : BaseScannerAsync
 {
@@ -24,7 +24,7 @@ public class PrefetchScannerAsync : BaseScannerAsync
         _pathSettings = pathSettings;
     }
 
-    public override async Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
+    public override Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.Now;
 
@@ -33,51 +33,22 @@ public class PrefetchScannerAsync : BaseScannerAsync
             var prefetchPath = _pathSettings.Windows.PrefetchPath;
 
             if (!Directory.Exists(prefetchPath))
-            {
-                return CreateErrorResult("Папка Prefetch не найдена или недоступна", startTime);
-            }
+                return Task.FromResult(CreateErrorResult("Папка Prefetch не найдена или недоступна", startTime));
 
-            var suspiciousFiles = new List<string>();
+            var findings = Directory.EnumerateFiles(prefetchPath, "*.pf")
+                .Where(file => KeywordMatcher.ContainsKeyword(Path.GetFileName(file)))
+                .Select(file => $"{file} (Modified: {new FileInfo(file).LastWriteTime:dd.MM.yyyy HH:mm:ss})")
+                .ToList();
 
-            await Task.Run(() =>
-            {
-                try
-                {
-                    var files = Directory.EnumerateFiles(prefetchPath, "*.pf");
-
-                    foreach (var file in files)
-                    {
-                        if (cancellationToken.IsCancellationRequested)
-                            break;
-
-                        var fileName = Path.GetFileName(file);
-
-                        if (KeywordMatcher.ContainsKeyword(fileName))
-                        {
-                            var fileInfo = new FileInfo(file);
-                            suspiciousFiles.Add($"{file} (Modified: {fileInfo.LastWriteTime:dd.MM.yyyy HH:mm:ss})");
-                        }
-                    }
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    // Access denied
-                }
-                catch (IOException)
-                {
-                    // IO error
-                }
-            }, cancellationToken);
-
-            return CreateSuccessResult(suspiciousFiles, startTime);
+            return Task.FromResult(CreateSuccessResult(findings, startTime));
         }
-        catch (OperationCanceledException)
+        catch (UnauthorizedAccessException)
         {
-            return CreateErrorResult("Scan cancelled", startTime);
+            return Task.FromResult(CreateErrorResult("Нет доступа к папке Prefetch", startTime));
         }
         catch (Exception ex)
         {
-            return CreateErrorResult(ex.Message, startTime);
+            return Task.FromResult(CreateErrorResult(ex.Message, startTime));
         }
     }
 }

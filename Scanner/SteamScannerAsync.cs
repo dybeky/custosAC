@@ -78,17 +78,8 @@ public class SteamScannerAsync : BaseScannerAsync
         return paths;
     }
 
-    private string? FindFirstExisting(List<string> paths)
-    {
-        foreach (var path in paths)
-        {
-            if (File.Exists(path))
-            {
-                return path;
-            }
-        }
-        return null;
-    }
+    private static string? FindFirstExisting(List<string> paths)
+        => paths.FirstOrDefault(File.Exists);
 
     private List<SteamAccount> ParseSteamAccounts(string vdfPath)
     {

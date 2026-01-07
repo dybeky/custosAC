@@ -5,7 +5,7 @@ using CustosAC.Services;
 namespace CustosAC.Scanner;
 
 /// <summary>
-/// Async сканер AppData
+/// Сканер AppData папок
 /// </summary>
 public class AppDataScannerAsync : BaseScannerAsync
 {
@@ -20,53 +20,30 @@ public class AppDataScannerAsync : BaseScannerAsync
     {
     }
 
-    public override async Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
+    public override Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.Now;
 
         try
         {
-            var appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var localappdata = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var userprofile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var locallow = Path.Combine(userprofile, "AppData", "LocalLow");
-
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             var folders = new[]
             {
-                (path: appdata, name: "AppData\\Roaming"),
-                (path: localappdata, name: "AppData\\Local"),
-                (path: locallow, name: "AppData\\LocalLow")
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                Path.Combine(userProfile, "AppData", "LocalLow")
             };
 
-            var allResults = new List<string>();
+            var results = folders
+                .Where(Directory.Exists)
+                .SelectMany(path => ScanFolder(path, ScanSettings.ExecutableExtensions, ScanSettings.AppDataScanDepth))
+                .ToList();
 
-            // Параллельное сканирование всех папок AppData
-            var scanTasks = folders.Select(async folder =>
-            {
-                if (!Directory.Exists(folder.path))
-                {
-                    return new List<string>();
-                }
-
-                return await ScanFolderParallelAsync(
-                    folder.path,
-                    ScanSettings.ExecutableExtensions,
-                    ScanSettings.AppDataScanDepth,
-                    cancellationToken);
-            });
-
-            var results = await Task.WhenAll(scanTasks);
-            allResults = results.SelectMany(r => r).ToList();
-
-            return CreateSuccessResult(allResults, startTime);
-        }
-        catch (OperationCanceledException)
-        {
-            return CreateErrorResult("Scan cancelled", startTime);
+            return Task.FromResult(CreateSuccessResult(results, startTime));
         }
         catch (Exception ex)
         {
-            return CreateErrorResult(ex.Message, startTime);
+            return Task.FromResult(CreateErrorResult(ex.Message, startTime));
         }
     }
 }

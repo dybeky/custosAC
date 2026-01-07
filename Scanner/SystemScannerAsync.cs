@@ -5,7 +5,7 @@ using CustosAC.Services;
 namespace CustosAC.Scanner;
 
 /// <summary>
-/// Async сканер системных папок
+/// Сканер системных папок
 /// </summary>
 public class SystemScannerAsync : BaseScannerAsync
 {
@@ -24,49 +24,33 @@ public class SystemScannerAsync : BaseScannerAsync
         _pathSettings = pathSettings;
     }
 
-    public override async Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
+    public override Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.Now;
 
         try
         {
-            var userprofile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-            var folders = new[]
+            var folders = new (string path, int depth)[]
             {
-                (path: _pathSettings.Windows.WindowsPath, maxDepth: ScanSettings.WindowsScanDepth),
-                (path: _pathSettings.Windows.ProgramFilesX86, maxDepth: ScanSettings.ProgramFilesScanDepth),
-                (path: _pathSettings.Windows.ProgramFiles, maxDepth: ScanSettings.ProgramFilesScanDepth),
-                (path: Path.Combine(userprofile, "Downloads"), maxDepth: ScanSettings.UserFoldersScanDepth),
-                (path: Path.Combine(userprofile, "OneDrive"), maxDepth: ScanSettings.UserFoldersScanDepth)
+                (_pathSettings.Windows.WindowsPath, ScanSettings.WindowsScanDepth),
+                (_pathSettings.Windows.ProgramFilesX86, ScanSettings.ProgramFilesScanDepth),
+                (_pathSettings.Windows.ProgramFiles, ScanSettings.ProgramFilesScanDepth),
+                (Path.Combine(userProfile, "Downloads"), ScanSettings.UserFoldersScanDepth),
+                (Path.Combine(userProfile, "OneDrive"), ScanSettings.UserFoldersScanDepth)
             };
 
-            var allResults = new List<string>();
-
-            // Параллельное сканирование всех системных папок
-            var scanTasks = folders
+            var results = folders
                 .Where(f => Directory.Exists(f.path))
-                .Select(async folder =>
-                {
-                    return await ScanFolderParallelAsync(
-                        folder.path,
-                        ScanSettings.ExecutableExtensions,
-                        folder.maxDepth,
-                        cancellationToken);
-                });
+                .SelectMany(f => ScanFolder(f.path, ScanSettings.ExecutableExtensions, f.depth))
+                .ToList();
 
-            var results = await Task.WhenAll(scanTasks);
-            allResults = results.SelectMany(r => r).ToList();
-
-            return CreateSuccessResult(allResults, startTime);
-        }
-        catch (OperationCanceledException)
-        {
-            return CreateErrorResult("Scan cancelled", startTime);
+            return Task.FromResult(CreateSuccessResult(results, startTime));
         }
         catch (Exception ex)
         {
-            return CreateErrorResult(ex.Message, startTime);
+            return Task.FromResult(CreateErrorResult(ex.Message, startTime));
         }
     }
 }

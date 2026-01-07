@@ -167,14 +167,20 @@ public class ProcessService : IDisposable
         }
     }
 
-    public async Task OpenFolderAsync(string path)
+    public Task OpenFolderAsync(string path)
+        => OpenWithShellAsync("explorer.exe", path);
+
+    public Task OpenUrlAsync(string url)
+        => OpenWithShellAsync(url);
+
+    private async Task OpenWithShellAsync(string fileName, string? arguments = null)
     {
         try
         {
             var psi = new ProcessStartInfo
             {
-                FileName = "explorer.exe",
-                Arguments = path,
+                FileName = fileName,
+                Arguments = arguments ?? string.Empty,
                 UseShellExecute = true
             };
 
@@ -186,29 +192,7 @@ public class ProcessService : IDisposable
         }
         catch
         {
-            // Ignore errors
-        }
-    }
-
-    public async Task OpenUrlAsync(string url)
-    {
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = url,
-                UseShellExecute = true
-            };
-
-            var process = await StartProcessAsync(psi);
-            if (process != null)
-            {
-                TrackProcess(process);
-            }
-        }
-        catch
-        {
-            // Ignore errors
+            // Ignore errors opening shell processes
         }
     }
 

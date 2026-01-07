@@ -36,29 +36,19 @@ public abstract class BaseScannerAsync : IScanner, IDisposable
     }
 
     /// <summary>
-    /// Простое синхронное сканирование папки (без deadlock)
+    /// Сканирование папки с учётом глубины и исключений
     /// </summary>
-    protected Task<List<string>> ScanFolderParallelAsync(
-        string path,
-        string[] extensions,
-        int maxDepth,
-        CancellationToken ct = default)
+    protected List<string> ScanFolder(string path, string[] extensions, int maxDepth)
     {
         var results = new List<string>();
-
-        if (!Directory.Exists(path))
-        {
-            return Task.FromResult(results);
-        }
+        if (!Directory.Exists(path)) return results;
 
         var excludedDirs = new HashSet<string>(ScanSettings.ExcludedDirectories, StringComparer.OrdinalIgnoreCase);
-
-        ScanFolderSync(path, extensions, maxDepth, 0, results, excludedDirs);
-
-        return Task.FromResult(results);
+        ScanFolderRecursive(path, extensions, maxDepth, 0, results, excludedDirs);
+        return results;
     }
 
-    private void ScanFolderSync(
+    private void ScanFolderRecursive(
         string path,
         string[] extensions,
         int maxDepth,
@@ -66,8 +56,7 @@ public abstract class BaseScannerAsync : IScanner, IDisposable
         List<string> results,
         HashSet<string> excludedDirs)
     {
-        if (currentDepth > maxDepth)
-            return;
+        if (currentDepth > maxDepth) return;
 
         try
         {
@@ -79,37 +68,17 @@ public abstract class BaseScannerAsync : IScanner, IDisposable
 
                     if (Directory.Exists(entry))
                     {
-                        // Пропустить исключённые папки
-                        if (excludedDirs.Contains(name))
-                            continue;
+                        if (excludedDirs.Contains(name)) continue;
 
-                        // Проверить имя папки на ключевые слова
                         if (KeywordMatcher.ContainsKeyword(name))
-                        {
                             results.Add(entry);
-                        }
 
-                        // Рекурсивно сканировать
-                        ScanFolderSync(entry, extensions, maxDepth, currentDepth + 1, results, excludedDirs);
+                        ScanFolderRecursive(entry, extensions, maxDepth, currentDepth + 1, results, excludedDirs);
                     }
-                    else if (File.Exists(entry))
+                    else if (File.Exists(entry) && KeywordMatcher.ContainsKeyword(name))
                     {
-                        // Проверить имя файла
-                        if (KeywordMatcher.ContainsKeyword(name))
-                        {
-                            if (extensions.Length == 0)
-                            {
-                                results.Add(entry);
-                            }
-                            else
-                            {
-                                var ext = Path.GetExtension(entry).ToLowerInvariant();
-                                if (extensions.Contains(ext))
-                                {
-                                    results.Add(entry);
-                                }
-                            }
-                        }
+                        if (extensions.Length == 0 || extensions.Contains(Path.GetExtension(entry).ToLowerInvariant()))
+                            results.Add(entry);
                     }
                 }
                 catch (UnauthorizedAccessException) { }
