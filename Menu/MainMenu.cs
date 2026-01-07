@@ -72,7 +72,7 @@ public class MainMenu
         _consoleUI.ClearScreen();
         _consoleUI.PrintEmptyLine();
         _consoleUI.PrintEmptyLine();
-        _consoleUI.PrintBox(new[] { "Закрываем открытые процессы..." }, true);
+        _consoleUI.PrintBoxOrange(new[] { "Закрываем открытые процессы..." });
 
         await Task.Delay(_settings.Timeouts.ExitDelayMs);
         _processService.KillAllTrackedProcesses();

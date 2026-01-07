@@ -70,4 +70,7 @@ public interface IConsoleUI
 
     /// <summary>Вывести рамку с текстом</summary>
     void PrintBox(string[] lines, bool success);
+
+    /// <summary>Вывести рамку с текстом (оранжевый цвет)</summary>
+    void PrintBoxOrange(string[] lines);
 }

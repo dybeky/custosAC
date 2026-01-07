@@ -339,4 +339,18 @@ public class ConsoleUIService : IConsoleUI
         }
         Console.WriteLine($"{color}{bold}╚══════════════════════════════════════════════════╝{reset}");
     }
+
+    public void PrintBoxOrange(string[] lines)
+    {
+        string color = AnsiColors.Orange;
+        string bold = AnsiColors.Bold;
+        string reset = AnsiColors.Reset;
+
+        Console.WriteLine($"{color}{bold}╔══════════════════════════════════════════════════╗{reset}");
+        foreach (var line in lines)
+        {
+            Console.WriteLine($"{color}║  {line,-48}║{reset}");
+        }
+        Console.WriteLine($"{color}{bold}╚══════════════════════════════════════════════════╝{reset}");
+    }
 }
