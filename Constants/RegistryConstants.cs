@@ -5,31 +5,6 @@ namespace CustosAC.Constants;
 /// </summary>
 public static class RegistryConstants
 {
-    // ═══════════════════════════════════════════════════════════════
-    // ПУТИ РЕЕСТРА ДЛЯ СКАНИРОВАНИЯ
-    // ═══════════════════════════════════════════════════════════════
-
-    /// <summary>MuiCache - кэш запущенных программ</summary>
-    public const string MuiCachePath = @"HKEY_CURRENT_USER\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache";
-
-    /// <summary>AppSwitched - история переключений Alt+Tab</summary>
-    public const string AppSwitchedPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched";
-
-    /// <summary>ShowJumpView - история JumpList</summary>
-    public const string ShowJumpViewPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView";
-
-    /// <summary>Ключи реестра для сканирования</summary>
-    public static readonly (string path, string name)[] ScanKeys =
-    {
-        (MuiCachePath, "MuiCache"),
-        (AppSwitchedPath, "AppSwitched"),
-        (ShowJumpViewPath, "ShowJumpView")
-    };
-
-    // ═══════════════════════════════════════════════════════════════
-    // БЛОКИРОВКИ ДЛЯ УДАЛЕНИЯ (РАЗБЛОКИРОВКА СИСТЕМЫ)
-    // ═══════════════════════════════════════════════════════════════
-
     /// <summary>Значения реестра для удаления при разблокировке системы</summary>
     public static readonly (string key, string value)[] ValuesToDelete =
     {

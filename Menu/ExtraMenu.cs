@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using CustosAC.Configuration;
 using CustosAC.Constants;
 using CustosAC.Services;
@@ -51,7 +50,7 @@ public class ExtraMenu
             switch (choice)
             {
                 case 1:
-                    await EnableRegistryAsync();
+                    EnableRegistry();
                     break;
                 case 2:
                     await EnableSystemSettingsAsync();
@@ -60,7 +59,7 @@ public class ExtraMenu
         }
     }
 
-    private async Task EnableRegistryAsync()
+    private void EnableRegistry()
     {
         bool success = _registryService.DeleteKey(_registrySettings.RegeditBlockPath);
 
@@ -77,7 +76,6 @@ public class ExtraMenu
             _consoleUI.PrintWarning("Возможно реестр уже включен или требуются права администратора");
         }
         _consoleUI.Pause();
-        await Task.CompletedTask;
     }
 
     private async Task EnableSystemSettingsAsync()
@@ -162,9 +160,9 @@ public class ExtraMenu
                 _consoleUI.Log($"  + Перезапущена служба: {name}", true);
             }
         }
-        catch
+        catch (Exception)
         {
-            // Service restart failed - expected if service is not running
+            // Service restart failed - expected if service is not running or access denied
         }
     }
 

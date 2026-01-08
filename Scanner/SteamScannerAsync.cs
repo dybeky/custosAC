@@ -9,6 +9,7 @@ namespace CustosAC.Scanner;
 /// </summary>
 public class SteamScannerAsync : BaseScannerAsync
 {
+    private const string SteamIdPrefix = "\"7656";
     private readonly PathSettings _pathSettings;
 
     public override string Name => "Steam Scanner";
@@ -46,7 +47,7 @@ public class SteamScannerAsync : BaseScannerAsync
         }
         catch (OperationCanceledException)
         {
-            return CreateErrorResult("Scan cancelled", startTime);
+            return CreateErrorResult("Сканирование отменено", startTime);
         }
         catch (Exception ex)
         {
@@ -97,7 +98,7 @@ public class SteamScannerAsync : BaseScannerAsync
                 var trimmedLine = line.Trim();
 
                 // Ищем SteamID (начинается с "7656...")
-                if (trimmedLine.StartsWith("\"7656") && trimmedLine.Contains("\""))
+                if (trimmedLine.StartsWith(SteamIdPrefix) && trimmedLine.Contains("\""))
                 {
                     var parts = trimmedLine.Split('"');
                     if (parts.Length >= 2)
@@ -154,9 +155,9 @@ public class SteamScannerAsync : BaseScannerAsync
                 }
             }
         }
-        catch
+        catch (Exception)
         {
-            // Error parsing file
+            // VDF file parsing error (malformed file, encoding issues) - return partial results
         }
 
         return accounts;

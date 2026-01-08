@@ -38,7 +38,7 @@ public class ProcessService : IDisposable
                 }
                 catch
                 {
-                    // Ignore disposal errors
+                    // Process may already be disposed or in invalid state - safe to ignore
                 }
             }
         }
@@ -78,7 +78,7 @@ public class ProcessService : IDisposable
                 }
                 catch
                 {
-                    // Ignore disposal errors
+                    // Process cleanup failed - may already be terminated, safe to ignore
                 }
             }
         }
@@ -117,11 +117,12 @@ public class ProcessService : IDisposable
                     process.Kill();
                 }
             }
-            catch { }
+            catch { /* Process already exited or inaccessible */ }
             return false;
         }
         catch
         {
+            // Command execution failed (file not found, access denied, etc.)
             return false;
         }
         finally
@@ -139,6 +140,7 @@ public class ProcessService : IDisposable
         }
         catch
         {
+            // Process start failed - return null to indicate failure
             return Task.FromResult<Process?>(null);
         }
     }
@@ -163,6 +165,7 @@ public class ProcessService : IDisposable
         }
         catch
         {
+            // Process start failed - return null to indicate failure
             return null;
         }
     }
@@ -192,7 +195,7 @@ public class ProcessService : IDisposable
         }
         catch
         {
-            // Ignore errors opening shell processes
+            // Shell process errors are non-critical - user can manually open folder/url
         }
     }
 
@@ -231,13 +234,13 @@ public class ProcessService : IDisposable
                             process.Kill();
                         }
                     }
-                    catch { }
+                    catch { /* Process already exited or inaccessible */ }
                 }
             }
         }
         catch
         {
-            // Ignore errors
+            // Clipboard operation failed - non-critical, continue silently
         }
         finally
         {
@@ -268,7 +271,7 @@ public class ProcessService : IDisposable
                     }
                     catch
                     {
-                        // Ignore disposal errors
+                        // Process may already be disposed or in invalid state - safe to ignore
                     }
                 }
                 _trackedProcesses.Clear();

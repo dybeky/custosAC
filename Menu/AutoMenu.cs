@@ -1,4 +1,3 @@
-using CustosAC.Abstractions;
 using CustosAC.Configuration;
 using CustosAC.Models;
 using CustosAC.Scanner;
@@ -210,17 +209,18 @@ public class AutoMenu
             _consoleUI.PrintError($"[{name}] НАЙДЕНО: {result.Count} элементов");
             _consoleUI.PrintEmptyLine();
 
-            // Показываем первые 10
-            foreach (var finding in result.Findings.Take(10))
+            // Показываем первую часть результатов
+            var previewCount = _appSettings.Console.ItemsPerPage / 2;
+            foreach (var finding in result.Findings.Take(previewCount))
             {
                 _consoleUI.PrintListItem(finding);
             }
 
-            // Если больше 10 - предлагаем посмотреть все
-            if (result.Count > 10)
+            // Если больше - предлагаем посмотреть все
+            if (result.Count > previewCount)
             {
                 _consoleUI.PrintEmptyLine();
-                _consoleUI.PrintWarning($"... и ещё {result.Count - 10} элементов");
+                _consoleUI.PrintWarning($"... и ещё {result.Count - previewCount} элементов");
                 _consoleUI.PrintEmptyLine();
                 _consoleUI.PrintHighlight("[V] - Показать все  |  [Enter] - Продолжить");
 
@@ -365,15 +365,16 @@ public class AutoMenu
             _consoleUI.PrintError($"  Найдено подозрительных элементов: {result.Count}");
             _consoleUI.PrintEmptyLine();
 
-            foreach (var finding in result.Findings.Take(20))
+            var displayCount = _appSettings.Console.ItemsPerPage;
+            foreach (var finding in result.Findings.Take(displayCount))
             {
                 _consoleUI.PrintListItem(finding);
             }
 
-            if (result.Count > 20)
+            if (result.Count > displayCount)
             {
                 _consoleUI.PrintEmptyLine();
-                _consoleUI.PrintInfo($"... и ещё {result.Count - 20} элементов");
+                _consoleUI.PrintInfo($"... и ещё {result.Count - displayCount} элементов");
             }
 
             _consoleUI.PrintEmptyLine();

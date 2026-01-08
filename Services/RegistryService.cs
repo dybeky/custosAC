@@ -34,6 +34,7 @@ public class RegistryService
         }
         catch
         {
+            // Registry access may fail due to permissions or missing key - return empty content
             return false;
         }
     }
@@ -52,6 +53,7 @@ public class RegistryService
         }
         catch
         {
+            // Value deletion may fail if key doesn't exist or access denied - return false
             return false;
         }
     }
@@ -69,6 +71,7 @@ public class RegistryService
         }
         catch
         {
+            // Key deletion may fail due to permissions or protected key - return false
             return false;
         }
     }
@@ -86,6 +89,7 @@ public class RegistryService
         }
         catch
         {
+            // Registry access error - treat as key not existing
             return false;
         }
     }

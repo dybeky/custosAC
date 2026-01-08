@@ -1,7 +1,8 @@
 namespace CustosAC.Configuration;
 
 /// <summary>
-/// Настройки сканирования
+/// Настройки сканирования.
+/// Значения по умолчанию могут быть переопределены в appsettings.json
 /// </summary>
 public class ScanSettings
 {
@@ -18,7 +19,4 @@ public class ScanSettings
         "recovery", "perflogs", "windowsapps", "winsxs",
         ".git", "node_modules"
     };
-
-    public bool ParallelScanEnabled { get; set; } = true;
-    public int MaxDegreeOfParallelism { get; set; } = 4;
 }

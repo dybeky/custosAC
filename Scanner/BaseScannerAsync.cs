@@ -81,12 +81,12 @@ public abstract class BaseScannerAsync : IScanner, IDisposable
                             results.Add(entry);
                     }
                 }
-                catch (UnauthorizedAccessException) { }
-                catch (IOException) { }
+                catch (UnauthorizedAccessException) { /* Access denied to file/folder - skip */ }
+                catch (IOException) { /* File in use or other IO error - skip */ }
             }
         }
-        catch (UnauthorizedAccessException) { }
-        catch (IOException) { }
+        catch (UnauthorizedAccessException) { /* Access denied to directory - skip */ }
+        catch (IOException) { /* Directory access error - skip */ }
     }
 
     /// <summary>

@@ -27,13 +27,6 @@
 
   </PropertyGroup>
 
-  <!-- Исключить папку Tests из сборки основного проекта -->
-  <ItemGroup>
-    <Compile Remove="Tests\**" />
-    <None Remove="Tests\**" />
-  </ItemGroup>
-
-
   <ItemGroup>
     <!-- Копировать appsettings.json в output -->
     <None Update="appsettings.json">

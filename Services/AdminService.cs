@@ -22,6 +22,7 @@ public class AdminService
         }
         catch
         {
+            // Security check failed - assume non-admin for safety
             return false;
         }
     }
