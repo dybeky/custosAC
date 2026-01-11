@@ -1,7 +1,7 @@
-namespace CustosAC.Configuration;
+namespace CustosAC.Core.Configuration;
 
 /// <summary>
-/// Настройки реестра
+/// Registry settings
 /// </summary>
 public class RegistrySettings
 {
@@ -16,7 +16,7 @@ public class RegistrySettings
 }
 
 /// <summary>
-/// Ключ реестра для сканирования
+/// Registry key for scanning
 /// </summary>
 public class RegistryScanKey
 {

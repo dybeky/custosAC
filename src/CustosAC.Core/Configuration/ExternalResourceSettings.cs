@@ -1,7 +1,7 @@
-namespace CustosAC.Configuration;
+namespace CustosAC.Core.Configuration;
 
 /// <summary>
-/// Настройки внешних ресурсов
+/// External resource settings
 /// </summary>
 public class ExternalResourceSettings
 {
@@ -21,7 +21,7 @@ public class ExternalResourceSettings
 }
 
 /// <summary>
-/// Информация о сайте
+/// Website information
 /// </summary>
 public class WebsiteInfo
 {
@@ -30,7 +30,7 @@ public class WebsiteInfo
 }
 
 /// <summary>
-/// Информация о Telegram боте
+/// Telegram bot information
 /// </summary>
 public class TelegramBotInfo
 {

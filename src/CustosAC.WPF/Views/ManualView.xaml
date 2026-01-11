@@ -1,0 +1,323 @@
+<UserControl x:Class="CustosAC.WPF.Views.ManualView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="900">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,25">
+            <TextBlock Text="Manual Check"
+                       FontSize="28" FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+            <TextBlock Text="Open folders and tools manually for investigation"
+                       Style="{StaticResource SubtitleStyle}"
+                       Margin="0,5,0,0"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- System Tools Section -->
+                <Border Background="{StaticResource SurfaceBrush}"
+                        CornerRadius="12" Padding="20" Margin="0,0,0,15">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <materialDesign:PackIcon Kind="Cog" Width="24" Height="24"
+                                                     Foreground="{StaticResource SecondaryBrush}"
+                                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="System Tools"
+                                       FontSize="18" FontWeight="SemiBold"
+                                       Foreground="{StaticResource SecondaryBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <WrapPanel>
+                            <!-- Data Usage -->
+                            <Button Command="{Binding OpenDataUsageCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="160">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Web" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Data Usage" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Windows Defender -->
+                            <Button Command="{Binding OpenWindowsDefenderCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="180">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ShieldCheck" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Windows Defender" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Folders Section -->
+                <Border Background="{StaticResource SurfaceBrush}"
+                        CornerRadius="12" Padding="20" Margin="0,0,0,15">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <materialDesign:PackIcon Kind="Folder" Width="24" Height="24"
+                                                     Foreground="{StaticResource SecondaryBrush}"
+                                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Folders"
+                                       FontSize="18" FontWeight="SemiBold"
+                                       Foreground="{StaticResource SecondaryBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <WrapPanel>
+                            <!-- Videos -->
+                            <Button Command="{Binding OpenVideosCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Video" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Videos" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Downloads -->
+                            <Button Command="{Binding OpenDownloadsCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Download" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Downloads" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- AppData -->
+                            <Button Command="{Binding OpenAppDataCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FolderCog" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="AppData" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- LocalAppData -->
+                            <Button Command="{Binding OpenLocalAppDataCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FolderAccount" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="LocalAppData" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Prefetch -->
+                            <Button Command="{Binding OpenPrefetchCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FolderClock" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Prefetch" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- OneDrive -->
+                            <Button Command="{Binding OpenOneDriveCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Cloud" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="OneDrive" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Games Section -->
+                <Border Background="{StaticResource SurfaceBrush}"
+                        CornerRadius="12" Padding="20" Margin="0,0,0,15">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <materialDesign:PackIcon Kind="Gamepad" Width="24" Height="24"
+                                                     Foreground="{StaticResource SecondaryBrush}"
+                                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Games"
+                                       FontSize="18" FontWeight="SemiBold"
+                                       Foreground="{StaticResource SecondaryBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <WrapPanel>
+                            <!-- Unturned -->
+                            <Button Command="{Binding OpenUnturnedCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="GamepadVariant" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Unturned" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Steam -->
+                            <Button Command="{Binding OpenSteamCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Steam" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Steam" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Registry Section -->
+                <Border Background="{StaticResource SurfaceBrush}"
+                        CornerRadius="12" Padding="20" Margin="0,0,0,15">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <materialDesign:PackIcon Kind="DatabaseCog" Width="24" Height="24"
+                                                     Foreground="{StaticResource SecondaryBrush}"
+                                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Registry"
+                                       FontSize="18" FontWeight="SemiBold"
+                                       Foreground="{StaticResource SecondaryBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <WrapPanel>
+                            <!-- MuiCache -->
+                            <Button Command="{Binding OpenRegistryMuiCacheCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Key" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="MuiCache" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- AppSwitched -->
+                            <Button Command="{Binding OpenRegistryAppSwitchedCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="KeyChange" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="AppSwitched" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- ShowJumpView -->
+                            <Button Command="{Binding OpenRegistryShowJumpViewCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="160">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FormatListBulleted" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="ShowJumpView" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- RunMRU -->
+                            <Button Command="{Binding OpenRegistryRunMRUCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Console" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="RunMRU" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- UserAssist -->
+                            <Button Command="{Binding OpenRegistryUserAssistCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ChartBar" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="UserAssist" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Telegram Bots Section -->
+                <Border Background="{StaticResource SurfaceBrush}"
+                        CornerRadius="12" Padding="20"
+                        BorderBrush="{StaticResource ErrorBrush}"
+                        BorderThickness="1">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <materialDesign:PackIcon Kind="Send" Width="24" Height="24"
+                                                     Foreground="{StaticResource ErrorBrush}"
+                                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Telegram Cheat Bots"
+                                       FontSize="18" FontWeight="SemiBold"
+                                       Foreground="{StaticResource ErrorBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Open these bots to check if the user has interacted with them"
+                                   Style="{StaticResource SubtitleStyle}"
+                                   Margin="0,0,0,15"/>
+
+                        <WrapPanel>
+                            <!-- Undead Seller Bot -->
+                            <Button Command="{Binding OpenTelegramUndeadCommand}"
+                                    Style="{StaticResource CancelButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="180">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Robot" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="@undeadsellerbot" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Melony Solution Bot -->
+                            <Button Command="{Binding OpenTelegramMelonyCommand}"
+                                    Style="{StaticResource CancelButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="180">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Robot" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="@MelonySolutionBot" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Margin="0,15,0,0"
+                Visibility="{Binding StatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <TextBlock Text="{Binding StatusMessage}"
+                       Style="{StaticResource SubtitleStyle}"
+                       Foreground="{StaticResource SecondaryBrush}"/>
+        </Border>
+    </Grid>
+</UserControl>

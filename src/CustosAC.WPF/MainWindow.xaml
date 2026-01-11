@@ -1,0 +1,195 @@
+<Window x:Class="CustosAC.WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:vm="clr-namespace:CustosAC.WPF.ViewModels"
+        mc:Ignorable="d"
+        Title="custosAC for COBRA"
+        Height="700" Width="1000"
+        MinHeight="600" MinWidth="800"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}"
+        TextElement.Foreground="{StaticResource TextPrimaryBrush}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="14"
+        FontFamily="{StaticResource MuseoSans}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Loading Overlay (covers all rows) -->
+        <Grid x:Name="LoadingOverlay" Grid.RowSpan="3" Panel.ZIndex="100"
+              Background="{StaticResource BackgroundBrush}"
+              Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <!-- Spinning Circle -->
+                <materialDesign:PackIcon Kind="Loading" Width="60" Height="60"
+                                         Foreground="{StaticResource SecondaryBrush}"
+                                         HorizontalAlignment="Center"
+                                         RenderTransformOrigin="0.5,0.5">
+                    <materialDesign:PackIcon.RenderTransform>
+                        <RotateTransform x:Name="SpinnerRotate"/>
+                    </materialDesign:PackIcon.RenderTransform>
+                    <materialDesign:PackIcon.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard>
+                                <Storyboard RepeatBehavior="Forever">
+                                    <DoubleAnimation Storyboard.TargetName="SpinnerRotate"
+                                                     Storyboard.TargetProperty="Angle"
+                                                     From="0" To="360" Duration="0:0:1"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </materialDesign:PackIcon.Triggers>
+                </materialDesign:PackIcon>
+
+                <!-- Logo -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,30,0,0">
+                    <TextBlock Text="custos" FontSize="32" FontWeight="Bold"
+                               Foreground="White"
+                               FontFamily="{StaticResource MuseoSansBold}"/>
+                    <TextBlock Text="AC" FontSize="32" FontWeight="Bold"
+                               Foreground="{StaticResource SecondaryBrush}"
+                               FontFamily="{StaticResource MuseoSansBold}"/>
+                </StackPanel>
+
+                <TextBlock Text="Loading..."
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center" Margin="0,10,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Padding="20,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Logo -->
+                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                    <TextBlock Text="custos" FontSize="26" FontWeight="Bold"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               FontFamily="{StaticResource MuseoSansBold}"/>
+                    <TextBlock Text="AC" FontSize="26" FontWeight="Bold"
+                               Foreground="{StaticResource SecondaryBrush}"
+                               VerticalAlignment="Center"
+                               FontFamily="{StaticResource MuseoSansBold}"/>
+                    <TextBlock Text=" for COBRA" FontSize="14" FontWeight="Normal"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <!-- Time only -->
+                <TextBlock Grid.Column="2" Text="{Binding CurrentTime}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content with Sidebar -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Sidebar -->
+            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}">
+                <StackPanel VerticalAlignment="Top" Margin="0,20,0,0">
+                    <!-- Home/Dashboard -->
+                    <Button Style="{StaticResource SidebarButtonStyle}"
+                            Command="{Binding NavigateToDashboardCommand}"
+                            ToolTip="Home">
+                        <materialDesign:PackIcon Kind="Home" Width="24" Height="24"/>
+                    </Button>
+
+                    <!-- Manual Check -->
+                    <Button Style="{StaticResource SidebarButtonStyle}"
+                            Command="{Binding NavigateToManualCommand}"
+                            ToolTip="Manual Check">
+                        <materialDesign:PackIcon Kind="Eye" Width="24" Height="24"/>
+                    </Button>
+
+                    <!-- Scan -->
+                    <Button Style="{StaticResource SidebarButtonStyle}"
+                            Command="{Binding NavigateToScanCommand}"
+                            ToolTip="Scan">
+                        <materialDesign:PackIcon Kind="Radar" Width="24" Height="24"/>
+                    </Button>
+
+                    <!-- Utilities -->
+                    <Button Style="{StaticResource SidebarButtonStyle}"
+                            Command="{Binding NavigateToUtilitiesCommand}"
+                            ToolTip="Utilities">
+                        <materialDesign:PackIcon Kind="Toolbox" Width="24" Height="24"/>
+                    </Button>
+
+                    <!-- Separator -->
+                    <Border Height="1" Background="#333333" Margin="10,15"/>
+
+                    <!-- Settings -->
+                    <Button Style="{StaticResource SidebarButtonStyle}"
+                            Command="{Binding NavigateToSettingsCommand}"
+                            ToolTip="Settings">
+                        <materialDesign:PackIcon Kind="Cog" Width="24" Height="24"/>
+                    </Button>
+
+                    <!-- Update Check -->
+                    <Button Style="{StaticResource SidebarButtonStyle}"
+                            Command="{Binding CheckUpdateCommand}"
+                            ToolTip="Check Updates"
+                            IsEnabled="{Binding IsCheckingUpdate, Converter={StaticResource InverseBooleanConverter}}">
+                        <Grid>
+                            <!-- Normal icon -->
+                            <materialDesign:PackIcon Kind="Update" Width="24" Height="24"
+                                                     Visibility="{Binding IsCheckingUpdate, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                            <!-- Spinning icon when checking -->
+                            <materialDesign:PackIcon Kind="Loading" Width="24" Height="24"
+                                                     Visibility="{Binding IsCheckingUpdate, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                     RenderTransformOrigin="0.5,0.5">
+                                <materialDesign:PackIcon.RenderTransform>
+                                    <RotateTransform x:Name="UpdateSpinnerRotate"/>
+                                </materialDesign:PackIcon.RenderTransform>
+                                <materialDesign:PackIcon.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard RepeatBehavior="Forever">
+                                                <DoubleAnimation Storyboard.TargetName="UpdateSpinnerRotate"
+                                                                 Storyboard.TargetProperty="Angle"
+                                                                 From="0" To="360" Duration="0:0:1"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </materialDesign:PackIcon.Triggers>
+                            </materialDesign:PackIcon>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <!-- Content Area with fade transition -->
+            <ContentControl Grid.Column="1"
+                            Content="{Binding CurrentView, NotifyOnTargetUpdated=True}"
+                            Margin="20"
+                            x:Name="MainContentControl"/>
+        </Grid>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20,10">
+            <TextBlock Text="custosAC ver. 2.1"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+        </Border>
+    </Grid>
+</Window>

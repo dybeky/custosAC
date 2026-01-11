@@ -1,16 +1,15 @@
-namespace CustosAC.Configuration;
+namespace CustosAC.Core.Configuration;
 
 /// <summary>
-/// Основные настройки приложения
+/// Main application settings
 /// </summary>
 public class AppSettings
 {
     public TimeoutSettings Timeouts { get; set; } = new();
-    public ConsoleSettings Console { get; set; } = new();
 }
 
 /// <summary>
-/// Настройки таймаутов
+/// Timeout settings
 /// </summary>
 public class TimeoutSettings
 {
@@ -20,15 +19,4 @@ public class TimeoutSettings
     public int ExitDelayMs { get; set; } = 800;
     public int CleanupDelayMs { get; set; } = 1500;
     public int UiDelayMs { get; set; } = 500;
-}
-
-/// <summary>
-/// Настройки консоли
-/// </summary>
-public class ConsoleSettings
-{
-    public int Width { get; set; } = 120;
-    public int Height { get; set; } = 40;
-    public int MenuPadding { get; set; } = 10;
-    public int ItemsPerPage { get; set; } = 25;
 }

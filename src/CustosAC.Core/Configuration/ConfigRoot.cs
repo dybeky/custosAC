@@ -1,9 +1,9 @@
 using System.Text.Json;
 
-namespace CustosAC.Configuration;
+namespace CustosAC.Core.Configuration;
 
 /// <summary>
-/// Корневой класс конфигурации, загружаемый из appsettings.json
+/// Root configuration class loaded from appsettings.json
 /// </summary>
 public class ConfigRoot
 {
@@ -15,19 +15,19 @@ public class ConfigRoot
     public ExternalResourceSettings ExternalResources { get; set; } = new();
 
     /// <summary>
-    /// Загрузить конфигурацию из JSON файла
+    /// Load configuration from JSON file
     /// </summary>
+    /// <param name="jsonPath">Path to appsettings.json</param>
+    /// <returns>Configuration root</returns>
     public static ConfigRoot Load(string jsonPath)
     {
+        if (!File.Exists(jsonPath))
+        {
+            return new ConfigRoot();
+        }
+
         try
         {
-            if (!File.Exists(jsonPath))
-            {
-                Console.WriteLine($"Конфигурационный файл не найден: {jsonPath}");
-                Console.WriteLine("Используются настройки по умолчанию.");
-                return new ConfigRoot();
-            }
-
             var json = File.ReadAllText(jsonPath);
             return JsonSerializer.Deserialize<ConfigRoot>(json, new JsonSerializerOptions
             {
@@ -36,16 +36,12 @@ public class ConfigRoot
                 AllowTrailingCommas = true
             }) ?? new ConfigRoot();
         }
-        catch (JsonException ex)
+        catch (JsonException)
         {
-            Console.WriteLine($"Ошибка парсинга конфигурации: {ex.Message}");
-            Console.WriteLine("Используются настройки по умолчанию.");
             return new ConfigRoot();
         }
-        catch (IOException ex)
+        catch (IOException)
         {
-            Console.WriteLine($"Ошибка чтения конфигурации: {ex.Message}");
-            Console.WriteLine("Используются настройки по умолчанию.");
             return new ConfigRoot();
         }
     }
