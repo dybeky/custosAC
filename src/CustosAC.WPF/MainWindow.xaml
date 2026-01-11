@@ -6,7 +6,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:vm="clr-namespace:CustosAC.WPF.ViewModels"
         mc:Ignorable="d"
-        Title="custosAC for COBRA"
+        Title="custosAC"
         Height="700" Width="1000"
         MinHeight="600" MinWidth="800"
         WindowStartupLocation="CenterScreen"
@@ -84,9 +84,9 @@
                                Foreground="{StaticResource SecondaryBrush}"
                                VerticalAlignment="Center"
                                FontFamily="{StaticResource MuseoSansBold}"/>
-                    <TextBlock Text=" for COBRA" FontSize="14" FontWeight="Normal"
+                    <TextBlock Text=" - cheat scanner" FontSize="14" FontWeight="Normal"
                                Foreground="{StaticResource TextSecondaryBrush}"
-                               VerticalAlignment="Center" Margin="10,0,0,0"/>
+                               VerticalAlignment="Center" Margin="5,0,0,0"/>
                 </StackPanel>
 
                 <!-- Time only -->

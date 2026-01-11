@@ -16,7 +16,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly AdminService _adminService;
     private readonly DispatcherTimer _timer;
     private const string GitHubRepo = "dybeky/custosAC";
-    private const string CurrentVersion = "2.1.0";
+    private const string CurrentVersion = "2.0.0";
 
     [ObservableProperty]
     private ViewModelBase? _currentView;

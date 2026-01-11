@@ -18,7 +18,7 @@
             <TextBlock Text="Welcome"
                        FontSize="28" FontWeight="Bold"
                        Foreground="{StaticResource TextPrimaryBrush}"/>
-            <TextBlock Text="custosAC Anti-Cheat Scanner"
+            <TextBlock Text="custosAC - cheat scanner"
                        Style="{StaticResource SubtitleStyle}"
                        Margin="0,5,0,0"/>
         </StackPanel>
