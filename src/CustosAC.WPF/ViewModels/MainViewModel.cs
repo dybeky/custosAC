@@ -63,25 +63,26 @@ public partial class MainViewModel : ViewModelBase
         _timer.Tick += (s, e) => CurrentTime = DateTime.Now.ToString("HH:mm");
         _timer.Start();
 
-        // Hide loading after short delay and load version
+        // Fast startup - run version and update check in parallel
         Task.Run(async () =>
         {
-            await Task.Delay(1500);
+            // Start both tasks in parallel
+            var versionTask = _versionService.LoadVersionAsync();
+            var updateTask = CheckUpdateSilent();
+
+            // Short loading screen (800ms)
+            await Task.Delay(800);
             await Application.Current.Dispatcher.InvokeAsync(() => IsLoading = false);
 
-            // Load version using centralized service
-            await _versionService.LoadVersionAsync();
+            // Wait for version to complete
+            await versionTask;
             await Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 DisplayVersion = _versionService.Version;
             });
 
-            // Auto-check for updates on startup
-            await Task.Delay(500);
-            await Application.Current.Dispatcher.InvokeAsync(async () =>
-            {
-                await CheckUpdateSilent();
-            });
+            // Wait for update check and show overlay if needed
+            await updateTask;
         });
     }
 
@@ -96,7 +97,7 @@ public partial class MainViewModel : ViewModelBase
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
             client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-            client.Timeout = TimeSpan.FromSeconds(30);
+            client.Timeout = TimeSpan.FromSeconds(10); // Faster timeout for startup
 
             var response = await client.GetAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
 
@@ -110,19 +111,24 @@ public partial class MainViewModel : ViewModelBase
                 ?? "N/A";
             var downloadUrl = doc.RootElement.GetProperty("html_url").GetString();
 
-            LatestVersion = latestVersion;
-            UpdateUrl = downloadUrl;
-
-            var currentVersion = DisplayVersion.Trim();
-            var latest = latestVersion.Trim();
-
-            IsUpToDate = string.Equals(currentVersion, latest, StringComparison.OrdinalIgnoreCase);
-
-            // Only show overlay if update is available
-            if (!IsUpToDate)
+            await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                ShowUpdateOverlay = true;
-            }
+                LatestVersion = latestVersion;
+                UpdateUrl = downloadUrl;
+
+                // Compare after version is loaded
+                if (!string.IsNullOrEmpty(DisplayVersion) && DisplayVersion != "...")
+                {
+                    var currentVersion = DisplayVersion.Trim();
+                    var latest = latestVersion.Trim();
+                    IsUpToDate = string.Equals(currentVersion, latest, StringComparison.OrdinalIgnoreCase);
+
+                    if (!IsUpToDate)
+                    {
+                        ShowUpdateOverlay = true;
+                    }
+                }
+            });
         }
         catch
         {

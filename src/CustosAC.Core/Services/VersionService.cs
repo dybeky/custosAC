@@ -33,7 +33,7 @@ public class VersionService
         {
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-            client.Timeout = TimeSpan.FromSeconds(30);
+            client.Timeout = TimeSpan.FromSeconds(10);
 
             var url = $"https://api.github.com/repos/{GitHubRepo}/releases/latest";
             var response = await client.GetAsync(url);
