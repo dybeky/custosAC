@@ -11,6 +11,7 @@ namespace CustosAC.WPF.ViewModels;
 public partial class DashboardViewModel : ViewModelBase
 {
     private const string GitHubRepo = "dybeky/custosAC";
+    private const string ChangelogUrl = "https://raw.githubusercontent.com/dybeky/custosAC/master/change.md";
 
     [ObservableProperty]
     private string _changelog = "Loading changelog...";
@@ -40,20 +41,27 @@ public partial class DashboardViewModel : ViewModelBase
             client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
             client.Timeout = TimeSpan.FromSeconds(15);
 
-            var response = await client.GetStringAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
-            using var doc = JsonDocument.Parse(response);
+            // Load version from GitHub releases
+            var releaseTask = client.GetStringAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
 
+            // Load changelog from change.md
+            var changelogTask = client.GetStringAsync(ChangelogUrl);
+
+            await Task.WhenAll(releaseTask, changelogTask);
+
+            // Parse release info
+            using var doc = JsonDocument.Parse(await releaseTask);
             var tagName = doc.RootElement.GetProperty("tag_name").GetString() ?? "";
-            var body = doc.RootElement.GetProperty("body").GetString() ?? "No changelog available";
             var publishedAt = doc.RootElement.GetProperty("published_at").GetString();
 
-            // Clean up markdown from changelog
-            body = CleanMarkdown(body);
+            // Get changelog content
+            var changelogContent = await changelogTask;
+            changelogContent = CleanMarkdown(changelogContent);
 
             await Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 ReleaseVersion = tagName;
-                Changelog = body;
+                Changelog = changelogContent;
 
                 if (DateTime.TryParse(publishedAt, out var date))
                 {
