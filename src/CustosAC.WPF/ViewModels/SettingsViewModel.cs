@@ -43,7 +43,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     private string GetSettingsPath()
     {
-        return Path.Combine(AppContext.BaseDirectory, SettingsFileName);
+        return Path.Combine(Path.GetTempPath(), SettingsFileName);
     }
 
     private void LoadSettings()

@@ -47,12 +47,6 @@
     <ProjectReference Include="..\CustosAC.Core\CustosAC.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
-  </ItemGroup>
 
   <!-- Fonts -->
   <ItemGroup>

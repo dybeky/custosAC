@@ -13,7 +13,11 @@ public class KeywordSettings
         "undead", "melony", "fecurity", "ancient",
         "medusa", "mason", "midnight", "fatality",
         "memesense", "xnor", "aimbot", "wallhack",
-        "triggerbot", "norecoil", "speedhack"
+        "triggerbot", "norecoil", "speedhack",
+        "hwid_spoofer", "unturned_cheat", "unturnedcheat",
+        "unturnex", "uloader", "ucheats", "utools",
+        "cheatengine", "megadumper", "extremedumper",
+        "neverlose", "nixware"
     };
 
     /// <summary>

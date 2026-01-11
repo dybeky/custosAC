@@ -27,4 +27,5 @@ public class SteamPathSettings
 {
     public string[] AdditionalDrives { get; set; } = { "D:", "E:", "F:", "G:" };
     public string LoginUsersRelativePath { get; set; } = @"Steam\config\loginusers.vdf";
+    public string UnturnedScreenshotsRelativePath { get; set; } = @"Steam\steamapps\common\Unturned\Screenshots";
 }
