@@ -22,7 +22,7 @@ public partial class MainViewModel : ViewModelBase
     private ViewModelBase? _currentView;
 
     [ObservableProperty]
-    private string _currentTime = DateTime.Now.ToString("HH:mm");
+    private string _currentTime = DateTime.Now.ToString("HH:mm:ss");
 
     [ObservableProperty]
     private bool _isLoading = true;
@@ -60,7 +60,7 @@ public partial class MainViewModel : ViewModelBase
         {
             Interval = TimeSpan.FromSeconds(1)
         };
-        _timer.Tick += (s, e) => CurrentTime = DateTime.Now.ToString("HH:mm");
+        _timer.Tick += (s, e) => CurrentTime = DateTime.Now.ToString("HH:mm:ss");
         _timer.Start();
 
         // Fast startup - run version and update check in parallel

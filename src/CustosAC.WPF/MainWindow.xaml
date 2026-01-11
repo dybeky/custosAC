@@ -17,13 +17,29 @@
         FontFamily="{StaticResource MuseoSans}">
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        <!-- Main Content Container (will be blurred when overlay is shown) -->
+        <Grid x:Name="MainContentContainer">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ShowUpdateOverlay}" Value="True">
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <BlurEffect Radius="15"/>
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
 
-        <!-- Loading Overlay (covers all rows) -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Loading Overlay (covers all rows) -->
         <Grid x:Name="LoadingOverlay" Grid.RowSpan="3" Panel.ZIndex="100"
               Background="{StaticResource BackgroundBrush}"
               Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -177,24 +193,25 @@
                 </StackPanel>
             </Border>
 
-            <!-- Content Area with fade transition -->
-            <ContentControl Grid.Column="1"
-                            Content="{Binding CurrentView, NotifyOnTargetUpdated=True}"
-                            Margin="20"
-                            x:Name="MainContentControl"/>
+                <!-- Content Area with fade transition -->
+                <ContentControl Grid.Column="1"
+                                Content="{Binding CurrentView, NotifyOnTargetUpdated=True}"
+                                Margin="20"
+                                x:Name="MainContentControl"/>
+            </Grid>
+
+            <!-- Footer -->
+            <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20,10">
+                <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center">
+                    <Run Text="custosAC "/>
+                    <Run Text="{Binding DisplayVersion}"/>
+                </TextBlock>
+            </Border>
         </Grid>
 
-        <!-- Footer -->
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20,10">
-            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center">
-                <Run Text="custosAC "/>
-                <Run Text="{Binding DisplayVersion}"/>
-            </TextBlock>
-        </Border>
-
-        <!-- Update Overlay with Blur Effect -->
+        <!-- Update Overlay (no blur on dialog itself) -->
         <Grid x:Name="UpdateOverlay" Grid.RowSpan="3" Panel.ZIndex="200"
               Visibility="{Binding ShowUpdateOverlay, Converter={StaticResource BooleanToVisibilityConverter}}">
 
