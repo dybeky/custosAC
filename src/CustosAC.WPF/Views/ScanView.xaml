@@ -11,89 +11,23 @@
         <!-- Ready to Scan State -->
         <Grid Visibility="{Binding IsReadyToScan, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <!-- Radar Icon with soft pulse -->
-                <Border Width="120" Height="120" CornerRadius="60"
-                        Background="{StaticResource SurfaceBrush}"
-                        HorizontalAlignment="Center" Margin="0,0,0,30">
-                    <Border.Triggers>
-                        <EventTrigger RoutedEvent="Loaded">
-                            <BeginStoryboard>
-                                <Storyboard RepeatBehavior="Forever">
-                                    <DoubleAnimation Storyboard.TargetName="readyRadarIcon"
-                                                     Storyboard.TargetProperty="Opacity"
-                                                     From="0.6" To="1" Duration="0:0:2"
-                                                     AutoReverse="True">
-                                        <DoubleAnimation.EasingFunction>
-                                            <SineEase EasingMode="EaseInOut"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </Border.Triggers>
-                    <materialDesign:PackIcon x:Name="readyRadarIcon" Kind="Radar"
-                                             Width="60" Height="60"
-                                             Foreground="{StaticResource SecondaryBrush}"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center"/>
-                </Border>
-
-                <!-- Title -->
-                <TextBlock Text="Pow pow"
-                           FontSize="32" FontWeight="Bold"
-                           Foreground="{StaticResource TextPrimaryBrush}"
-                           HorizontalAlignment="Center" Margin="0,0,0,15"/>
-
-                <!-- Description -->
-                <TextBlock Text="Scan AppData, Registry, Processes, Prefetch, Steam and more"
-                           Style="{StaticResource SubtitleStyle}"
-                           HorizontalAlignment="Center" Margin="0,0,0,10"
-                           TextWrapping="Wrap" TextAlignment="Center" MaxWidth="400"/>
-
-                <!-- Scanner count -->
-                <TextBlock Text="9 scanners ready"
-                           FontSize="14"
-                           Foreground="{StaticResource SecondaryBrush}"
-                           HorizontalAlignment="Center" Margin="0,0,0,40"/>
-
-                <!-- Start Button -->
-                <Button Content="START SCAN"
-                        Command="{Binding StartScanCommand}"
-                        Style="{StaticResource PrimaryButtonStyle}"
-                        Width="200"/>
-            </StackPanel>
-        </Grid>
-
-        <!-- Scanning State -->
-        <Grid Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!-- Animated Header -->
-            <StackPanel Grid.Row="0" Margin="0,20,0,30" HorizontalAlignment="Center">
-                <!-- Spinning Radar Icon -->
-                <Border Width="80" Height="80" CornerRadius="40"
-                        Background="{StaticResource SurfaceBrush}"
-                        HorizontalAlignment="Center" Margin="0,0,0,20">
-                    <materialDesign:PackIcon Kind="Radar" Width="40" Height="40"
-                                             Foreground="{StaticResource SecondaryBrush}"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center"
-                                             RenderTransformOrigin="0.5,0.5">
-                        <materialDesign:PackIcon.RenderTransform>
-                            <RotateTransform x:Name="RadarRotate"/>
-                        </materialDesign:PackIcon.RenderTransform>
-                        <materialDesign:PackIcon.Triggers>
+                <!-- Radar Icon with soft pulse and glow -->
+                <Grid Width="140" Height="140" Margin="0,0,0,30">
+                    <!-- Soft glow background -->
+                    <Ellipse Width="140" Height="140" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#20FF6B00" Offset="0"/>
+                                <GradientStop Color="#00FF6B00" Offset="1"/>
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                        <Ellipse.Triggers>
                             <EventTrigger RoutedEvent="Loaded">
                                 <BeginStoryboard>
                                     <Storyboard RepeatBehavior="Forever">
-                                        <DoubleAnimation Storyboard.TargetName="RadarRotate"
-                                                         Storyboard.TargetProperty="Angle"
-                                                         From="0" To="360" Duration="0:0:3">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="0.3" To="0.8" Duration="0:0:2.5"
+                                                         AutoReverse="True">
                                             <DoubleAnimation.EasingFunction>
                                                 <SineEase EasingMode="EaseInOut"/>
                                             </DoubleAnimation.EasingFunction>
@@ -101,75 +35,27 @@
                                     </Storyboard>
                                 </BeginStoryboard>
                             </EventTrigger>
-                        </materialDesign:PackIcon.Triggers>
-                    </materialDesign:PackIcon>
-                </Border>
+                        </Ellipse.Triggers>
+                    </Ellipse>
 
-                <TextBlock Text="SCANNING..."
-                           Style="{StaticResource TitleStyle}"
-                           HorizontalAlignment="Center">
-                    <TextBlock.Triggers>
-                        <EventTrigger RoutedEvent="Loaded">
-                            <BeginStoryboard>
-                                <Storyboard RepeatBehavior="Forever">
-                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                     From="1" To="0.6" Duration="0:0:1.2"
-                                                     AutoReverse="True">
-                                        <DoubleAnimation.EasingFunction>
-                                            <SineEase EasingMode="EaseInOut"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </TextBlock.Triggers>
-                </TextBlock>
-
-                <TextBlock Text="{Binding CurrentScannerName}"
-                           FontSize="16"
-                           Foreground="{StaticResource SecondaryBrush}"
-                           HorizontalAlignment="Center" Margin="0,10,0,0"/>
-            </StackPanel>
-
-            <!-- Progress Section -->
-            <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}"
-                    CornerRadius="12" Margin="40,0" Padding="30,20">
-                <StackPanel>
-                    <Grid Margin="0,0,0,15">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Progress: "
-                                       Style="{StaticResource SubtitleStyle}"/>
-                            <TextBlock Text="{Binding OverallProgress, StringFormat='{}{0}%'}"
-                                       FontWeight="Bold"
-                                       Foreground="{StaticResource SecondaryBrush}"/>
-                        </StackPanel>
-
-                        <TextBlock Grid.Column="1" Text="{Binding ElapsedTime}"
-                                   Style="{StaticResource SubtitleStyle}"/>
-                    </Grid>
-
-                    <!-- Animated Progress Bar -->
-                    <Border Height="12" CornerRadius="6" Background="#252525">
-                        <Border CornerRadius="6" HorizontalAlignment="Left"
-                                Width="{Binding OverallProgress, Converter={StaticResource ProgressToWidthConverter}}">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#FF6B00" Offset="0"/>
-                                    <GradientStop Color="#FF8C00" Offset="0.5"/>
-                                    <GradientStop Color="#FF6B00" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <Border.Triggers>
+                    <!-- Main circle -->
+                    <Border Width="120" Height="120" CornerRadius="60"
+                            Background="{StaticResource SurfaceBrush}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#FF6B00" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+                        </Border.Effect>
+                        <materialDesign:PackIcon x:Name="readyRadarIcon" Kind="Radar"
+                                                 Width="55" Height="55"
+                                                 Foreground="{StaticResource SecondaryBrush}"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center">
+                            <materialDesign:PackIcon.Triggers>
                                 <EventTrigger RoutedEvent="Loaded">
                                     <BeginStoryboard>
                                         <Storyboard RepeatBehavior="Forever">
                                             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                             From="0.85" To="1" Duration="0:0:0.8"
+                                                             From="0.7" To="1" Duration="0:0:2"
                                                              AutoReverse="True">
                                                 <DoubleAnimation.EasingFunction>
                                                     <SineEase EasingMode="EaseInOut"/>
@@ -178,107 +64,228 @@
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </EventTrigger>
-                            </Border.Triggers>
-                        </Border>
+                            </materialDesign:PackIcon.Triggers>
+                        </materialDesign:PackIcon>
                     </Border>
+                </Grid>
+
+                <!-- Title -->
+                <TextBlock Text="{Binding Localization.Strings.Scan}"
+                           FontSize="32" FontWeight="Bold"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           HorizontalAlignment="Center" Margin="0,0,0,15"/>
+
+                <!-- Description -->
+                <TextBlock Text="{Binding Localization.Strings.ScanDescription}"
+                           Style="{StaticResource SubtitleStyle}"
+                           HorizontalAlignment="Center" Margin="0,0,0,10"
+                           TextWrapping="Wrap" TextAlignment="Center" MaxWidth="400"/>
+
+                <!-- Scanner count -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,40">
+                    <TextBlock Text="{Binding TotalScanners}"
+                               FontSize="14"
+                               Foreground="{StaticResource SecondaryBrush}"/>
+                    <TextBlock Text=" "
+                               FontSize="14"
+                               Foreground="{StaticResource SecondaryBrush}"/>
+                    <TextBlock Text="{Binding Localization.Strings.ScannersReady}"
+                               FontSize="14"
+                               Foreground="{StaticResource SecondaryBrush}"/>
                 </StackPanel>
-            </Border>
 
-            <!-- Scanner List -->
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="40,20,40,0">
-                <ItemsControl ItemsSource="{Binding Scanners}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="{StaticResource SurfaceBrush}"
-                                    CornerRadius="8" Padding="15" Margin="0,0,0,8"
-                                    BorderThickness="1">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Setter Property="BorderBrush" Value="Transparent"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                <Setter Property="BorderBrush" Value="{StaticResource SecondaryBrush}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                <!-- Start Button -->
+                <Button Content="{Binding Localization.Strings.StartScan}"
+                        Command="{Binding StartScanCommand}"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Width="200"/>
+            </StackPanel>
+        </Grid>
 
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
+        <!-- Scanning State - Modern Spinner -->
+        <Grid Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <!-- Multi-layer Spinning Animation -->
+                <Grid Width="180" Height="180" Margin="0,0,0,40">
 
-                                    <!-- Status Icon -->
-                                    <Border Grid.Column="0" Width="36" Height="36"
-                                            CornerRadius="18" Margin="0,0,15,0">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#252525"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                        <Setter Property="Background" Value="{StaticResource SecondaryBrush}"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsComplete}" Value="True">
-                                                        <Setter Property="Background" Value="{StaticResource SuccessBrush}"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
+                    <!-- Outer glow pulse -->
+                    <Ellipse Width="180" Height="180" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#30FF6B00" Offset="0.3"/>
+                                <GradientStop Color="#00FF6B00" Offset="1"/>
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         From="0.4" To="1" Duration="0:0:1.5"
+                                                         AutoReverse="True">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
 
-                                        <materialDesign:PackIcon Width="20" Height="20"
-                                                                 Foreground="White"
-                                                                 HorizontalAlignment="Center"
-                                                                 VerticalAlignment="Center">
-                                            <materialDesign:PackIcon.Style>
-                                                <Style TargetType="materialDesign:PackIcon">
-                                                    <Setter Property="Kind" Value="CircleOutline"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                            <Setter Property="Kind" Value="Radar"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding IsComplete}" Value="True">
-                                                            <Setter Property="Kind" Value="Check"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </materialDesign:PackIcon.Style>
-                                        </materialDesign:PackIcon>
-                                    </Border>
+                    <!-- Outer ring - static track -->
+                    <Ellipse Width="160" Height="160" StrokeThickness="2"
+                             Stroke="#252525" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                                    <!-- Name -->
-                                    <TextBlock Grid.Column="1" Text="{Binding Name}"
-                                               FontSize="15" FontWeight="Medium"
-                                               Foreground="{StaticResource TextPrimaryBrush}"
-                                               VerticalAlignment="Center"/>
+                    <!-- Outer ring - spinning gradient -->
+                    <Ellipse Width="160" Height="160" StrokeThickness="3"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"
+                             StrokeDashArray="1 2"
+                             RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.Stroke>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#FF6B00" Offset="0"/>
+                                <GradientStop Color="#FF8C00" Offset="0.5"/>
+                                <GradientStop Color="Transparent" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Ellipse.Stroke>
+                        <Ellipse.RenderTransform>
+                            <RotateTransform x:Name="OuterRingRotate"/>
+                        </Ellipse.RenderTransform>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetName="OuterRingRotate"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         From="0" To="360" Duration="0:0:4">
+                                            <DoubleAnimation.EasingFunction>
+                                                <SineEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
 
-                                    <!-- Status -->
-                                    <TextBlock Grid.Column="2" Text="{Binding Status}"
-                                               Style="{StaticResource SubtitleStyle}"
-                                               VerticalAlignment="Center" Margin="0,0,20,0"/>
+                    <!-- Middle ring - counter rotation -->
+                    <Ellipse Width="130" Height="130" StrokeThickness="2"
+                             HorizontalAlignment="Center" VerticalAlignment="Center"
+                             StrokeDashArray="3 5"
+                             RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.Stroke>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="Transparent" Offset="0"/>
+                                <GradientStop Color="#FF6B00" Offset="0.5"/>
+                                <GradientStop Color="Transparent" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Ellipse.Stroke>
+                        <Ellipse.RenderTransform>
+                            <RotateTransform x:Name="MiddleRingRotate"/>
+                        </Ellipse.RenderTransform>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetName="MiddleRingRotate"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         From="360" To="0" Duration="0:0:3">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
 
-                                    <!-- Findings Badge -->
-                                    <Border Grid.Column="3" CornerRadius="12" Padding="10,4"
-                                            Background="{StaticResource ErrorBrush}"
-                                            Visibility="{Binding FindingsCount, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <TextBlock Text="{Binding FindingsCount}"
-                                                   FontWeight="Bold" Foreground="White" FontSize="12"/>
-                                    </Border>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+                    <!-- Inner circle background -->
+                    <Border Width="100" Height="100" CornerRadius="50"
+                            Background="{StaticResource SurfaceBrush}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#FF6B00" BlurRadius="25" ShadowDepth="0" Opacity="0.5"/>
+                        </Border.Effect>
+                        <Border.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetProperty="(Border.Effect).(DropShadowEffect.Opacity)"
+                                                         From="0.3" To="0.7" Duration="0:0:1.2"
+                                                         AutoReverse="True">
+                                            <DoubleAnimation.EasingFunction>
+                                                <SineEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Border.Triggers>
+                    </Border>
 
-            <!-- Cancel Button -->
-            <Button Grid.Row="3" Content="CANCEL SCAN"
-                    Command="{Binding CancelScanCommand}"
-                    Style="{StaticResource CancelButtonStyle}"
-                    HorizontalAlignment="Center"
-                    Margin="0,20,0,20"/>
+                    <!-- Radar icon with rotation -->
+                    <materialDesign:PackIcon Kind="Radar" Width="45" Height="45"
+                                             Foreground="{StaticResource SecondaryBrush}"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center"
+                                             RenderTransformOrigin="0.5,0.5">
+                        <materialDesign:PackIcon.RenderTransform>
+                            <RotateTransform x:Name="RadarIconRotate"/>
+                        </materialDesign:PackIcon.RenderTransform>
+                        <materialDesign:PackIcon.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever">
+                                        <DoubleAnimation Storyboard.TargetName="RadarIconRotate"
+                                                         Storyboard.TargetProperty="Angle"
+                                                         From="0" To="360" Duration="0:0:2.5">
+                                            <DoubleAnimation.EasingFunction>
+                                                <QuadraticEase EasingMode="EaseInOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </materialDesign:PackIcon.Triggers>
+                    </materialDesign:PackIcon>
+                </Grid>
+
+                <!-- Scanning Text with smooth fade -->
+                <TextBlock Text="{Binding Localization.Strings.Scanning}"
+                           FontSize="26" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           HorizontalAlignment="Center">
+                    <TextBlock.Triggers>
+                        <EventTrigger RoutedEvent="Loaded">
+                            <BeginStoryboard>
+                                <Storyboard RepeatBehavior="Forever">
+                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                     From="1" To="0.6" Duration="0:0:1.8"
+                                                     AutoReverse="True">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseInOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </TextBlock.Triggers>
+                </TextBlock>
+
+                <!-- Subtitle -->
+                <TextBlock Text="{Binding Localization.Strings.ScanningSubtitle}"
+                           Style="{StaticResource SubtitleStyle}"
+                           HorizontalAlignment="Center" Margin="0,12,0,45"
+                           Opacity="0.8"/>
+
+                <!-- Cancel Button -->
+                <Button Content="{Binding Localization.Strings.CancelScan}"
+                        Command="{Binding CancelScanCommand}"
+                        Style="{StaticResource CancelButtonStyle}"
+                        Width="160"/>
+            </StackPanel>
         </Grid>
     </Grid>
 </UserControl>

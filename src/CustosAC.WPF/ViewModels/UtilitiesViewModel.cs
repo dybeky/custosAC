@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CustosAC.Core.Services;
 using CustosAC.WPF.ViewModels.Base;
 
 namespace CustosAC.WPF.ViewModels;
@@ -9,6 +10,8 @@ public partial class UtilitiesViewModel : ViewModelBase
 {
     [ObservableProperty]
     private string _statusMessage = "";
+
+    public LocalizationService Localization => LocalizationService.Instance;
 
     // LastActivityView - NirSoft
     [RelayCommand]

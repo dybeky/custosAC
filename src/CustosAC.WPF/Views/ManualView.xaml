@@ -16,10 +16,10 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,25">
-            <TextBlock Text="Manual Check"
+            <TextBlock Text="{Binding Localization.Strings.ManualCheck}"
                        FontSize="28" FontWeight="Bold"
                        Foreground="{StaticResource TextPrimaryBrush}"/>
-            <TextBlock Text="Open folders and tools manually for investigation"
+            <TextBlock Text="{Binding Localization.Strings.ManualCheckSubtitle}"
                        Style="{StaticResource SubtitleStyle}"
                        Margin="0,5,0,0"/>
         </StackPanel>
@@ -35,7 +35,7 @@
                             <materialDesign:PackIcon Kind="Cog" Width="24" Height="24"
                                                      Foreground="{StaticResource SecondaryBrush}"
                                                      VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="System Tools"
+                            <TextBlock Text="{Binding Localization.Strings.SystemTools}"
                                        FontSize="18" FontWeight="SemiBold"
                                        Foreground="{StaticResource SecondaryBrush}"
                                        VerticalAlignment="Center"/>
@@ -49,7 +49,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Web" Width="18" Height="18"
                                                              VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Data Usage" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Localization.Strings.DataUsage}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
 
@@ -75,7 +75,7 @@
                             <materialDesign:PackIcon Kind="Folder" Width="24" Height="24"
                                                      Foreground="{StaticResource SecondaryBrush}"
                                                      VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="Folders"
+                            <TextBlock Text="{Binding Localization.Strings.Folders}"
                                        FontSize="18" FontWeight="SemiBold"
                                        Foreground="{StaticResource SecondaryBrush}"
                                        VerticalAlignment="Center"/>
@@ -89,7 +89,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Video" Width="18" Height="18"
                                                              VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Videos" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Localization.Strings.Videos}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
 
@@ -100,7 +100,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Download" Width="18" Height="18"
                                                              VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Downloads" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Localization.Strings.Downloads}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
 
@@ -159,7 +159,7 @@
                             <materialDesign:PackIcon Kind="Gamepad" Width="24" Height="24"
                                                      Foreground="{StaticResource SecondaryBrush}"
                                                      VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="Games"
+                            <TextBlock Text="{Binding Localization.Strings.Games}"
                                        FontSize="18" FontWeight="SemiBold"
                                        Foreground="{StaticResource SecondaryBrush}"
                                        VerticalAlignment="Center"/>
@@ -199,7 +199,7 @@
                             <materialDesign:PackIcon Kind="DatabaseCog" Width="24" Height="24"
                                                      Foreground="{StaticResource SecondaryBrush}"
                                                      VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="Registry"
+                            <TextBlock Text="{Binding Localization.Strings.Registry}"
                                        FontSize="18" FontWeight="SemiBold"
                                        Foreground="{StaticResource SecondaryBrush}"
                                        VerticalAlignment="Center"/>
@@ -274,13 +274,13 @@
                             <materialDesign:PackIcon Kind="Send" Width="24" Height="24"
                                                      Foreground="{StaticResource ErrorBrush}"
                                                      VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="Telegram Cheat Bots"
+                            <TextBlock Text="{Binding Localization.Strings.TelegramCheatBots}"
                                        FontSize="18" FontWeight="SemiBold"
                                        Foreground="{StaticResource ErrorBrush}"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
 
-                        <TextBlock Text="Open these bots to check if the user has interacted with them"
+                        <TextBlock Text="{Binding Localization.Strings.TelegramBotsDesc}"
                                    Style="{StaticResource SubtitleStyle}"
                                    Margin="0,0,0,15"/>
 

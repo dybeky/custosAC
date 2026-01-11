@@ -14,9 +14,9 @@ namespace CustosAC.WPF.ViewModels;
 public partial class MainViewModel : ViewModelBase
 {
     private readonly AdminService _adminService;
+    private readonly VersionService _versionService;
     private readonly DispatcherTimer _timer;
     private const string GitHubRepo = "dybeky/custosAC";
-    private const string CurrentVersion = "2.0.0";
 
     [ObservableProperty]
     private ViewModelBase? _currentView;
@@ -30,9 +30,27 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isCheckingUpdate;
 
-    public MainViewModel(AdminService adminService)
+    [ObservableProperty]
+    private string _displayVersion = "...";
+
+    [ObservableProperty]
+    private bool _showUpdateOverlay;
+
+    [ObservableProperty]
+    private bool _isUpToDate;
+
+    [ObservableProperty]
+    private string _latestVersion = "";
+
+    [ObservableProperty]
+    private string? _updateUrl;
+
+    public LocalizationService Localization => LocalizationService.Instance;
+
+    public MainViewModel(AdminService adminService, VersionService versionService)
     {
         _adminService = adminService;
+        _versionService = versionService;
 
         // Show dashboard by default
         CurrentView = App.Services.GetRequiredService<DashboardViewModel>();
@@ -45,52 +63,19 @@ public partial class MainViewModel : ViewModelBase
         _timer.Tick += (s, e) => CurrentTime = DateTime.Now.ToString("HH:mm");
         _timer.Start();
 
-        // Hide loading after short delay and check for updates
+        // Hide loading after short delay and load version
         Task.Run(async () =>
         {
             await Task.Delay(1500);
             await Application.Current.Dispatcher.InvokeAsync(() => IsLoading = false);
 
-            // Auto-check updates on startup (silent mode - only notify if update found)
-            await CheckUpdateSilent();
-        });
-    }
-
-    private async Task CheckUpdateSilent()
-    {
-        try
-        {
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
-            client.Timeout = TimeSpan.FromSeconds(10);
-
-            var response = await client.GetStringAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
-            using var doc = JsonDocument.Parse(response);
-
-            var latestVersion = doc.RootElement.GetProperty("tag_name").GetString()?.TrimStart('v') ?? "0.0.0";
-            var downloadUrl = doc.RootElement.GetProperty("html_url").GetString();
-
-            if (string.Compare(latestVersion, CurrentVersion, StringComparison.OrdinalIgnoreCase) > 0)
+            // Load version using centralized service
+            await _versionService.LoadVersionAsync();
+            await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    var result = MessageBox.Show(
-                        $"New version available: v{latestVersion}\nCurrent version: v{CurrentVersion}\n\nOpen download page?",
-                        "Update Available",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Information);
-
-                    if (result == MessageBoxResult.Yes && downloadUrl != null)
-                    {
-                        Process.Start(new ProcessStartInfo(downloadUrl) { UseShellExecute = true });
-                    }
-                });
-            }
-        }
-        catch
-        {
-            // Silently ignore update check errors on startup
-        }
+                DisplayVersion = _versionService.Version;
+            });
+        });
     }
 
     [RelayCommand]
@@ -134,40 +119,63 @@ public partial class MainViewModel : ViewModelBase
         {
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
-            client.Timeout = TimeSpan.FromSeconds(30);
+            client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+            client.Timeout = TimeSpan.FromSeconds(15);
 
-            var response = await client.GetStringAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
-            using var doc = JsonDocument.Parse(response);
+            var response = await client.GetAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
 
-            var latestVersion = doc.RootElement.GetProperty("tag_name").GetString()?.TrimStart('v') ?? "0.0.0";
+            if (!response.IsSuccessStatusCode)
+            {
+                MessageBox.Show(Localization.Strings.NoReleases, Localization.Strings.Error, MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+
+            // Use "name" field for version display
+            var latestVersion = doc.RootElement.GetProperty("name").GetString()
+                ?? doc.RootElement.GetProperty("tag_name").GetString()
+                ?? "N/A";
             var downloadUrl = doc.RootElement.GetProperty("html_url").GetString();
 
-            if (string.Compare(latestVersion, CurrentVersion, StringComparison.OrdinalIgnoreCase) > 0)
-            {
-                var result = MessageBox.Show(
-                    $"New version available: v{latestVersion}\nCurrent version: v{CurrentVersion}\n\nOpen download page?",
-                    "Update Available",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Information);
+            LatestVersion = latestVersion;
+            UpdateUrl = downloadUrl;
 
-                if (result == MessageBoxResult.Yes && downloadUrl != null)
-                {
-                    Process.Start(new ProcessStartInfo(downloadUrl) { UseShellExecute = true });
-                }
-            }
-            else
-            {
-                MessageBox.Show($"You have the latest version (v{CurrentVersion})", "No Updates", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+            // Compare versions - check if current version matches latest
+            var currentVersion = DisplayVersion.Trim();
+            var latest = latestVersion.Trim();
+
+            // Simple comparison - if versions match, user is up to date
+            IsUpToDate = string.Equals(currentVersion, latest, StringComparison.OrdinalIgnoreCase);
+
+            // Show overlay
+            ShowUpdateOverlay = true;
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Failed to check for updates: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show($"{Localization.Strings.Error}: {ex.Message}", Localization.Strings.Error, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {
             IsCheckingUpdate = false;
         }
+    }
+
+    [RelayCommand]
+    private void OpenUpdate()
+    {
+        if (UpdateUrl != null)
+        {
+            Process.Start(new ProcessStartInfo(UpdateUrl) { UseShellExecute = true });
+        }
+        ShowUpdateOverlay = false;
+    }
+
+    [RelayCommand]
+    private void DismissUpdate()
+    {
+        ShowUpdateOverlay = false;
     }
 
     public void ShowScanView()

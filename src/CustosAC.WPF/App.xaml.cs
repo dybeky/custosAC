@@ -52,6 +52,7 @@ public partial class App : Application
         services.AddSingleton<CheatHashDatabase>();
         services.AddSingleton<KeywordMatcherService>();
         services.AddSingleton<ScannerFactory>();
+        services.AddSingleton<VersionService>();
 
         // UI Service
         services.AddSingleton<IUIService, WpfUIService>();

@@ -1,10 +1,11 @@
-using System.Collections.ObjectModel;
+using System.IO;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CustosAC.Core.Models;
 using CustosAC.Core.Services;
 using CustosAC.WPF.ViewModels.Base;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 
 namespace CustosAC.WPF.ViewModels;
 
@@ -15,19 +16,7 @@ public partial class ScanViewModel : ViewModelBase
     private CancellationTokenSource? _cts;
 
     [ObservableProperty]
-    private int _totalScanners = 7;
-
-    [ObservableProperty]
-    private int _completedScanners;
-
-    [ObservableProperty]
-    private int _overallProgress;
-
-    [ObservableProperty]
-    private string _currentScannerName = "Ready to scan";
-
-    [ObservableProperty]
-    private string _elapsedTime = "00:00";
+    private int _totalScanners;
 
     [ObservableProperty]
     private bool _isScanning;
@@ -35,31 +24,15 @@ public partial class ScanViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isReadyToScan = true;
 
-    [ObservableProperty]
-    private ObservableCollection<ScannerProgressItem> _scanners = new();
+    public LocalizationService Localization => LocalizationService.Instance;
 
-    private DateTime _startTime;
-    private System.Windows.Threading.DispatcherTimer? _elapsedTimer;
     private List<(string name, ScanResult result)> _results = new();
 
     public ScanViewModel(ScannerFactory scannerFactory, LogService logService)
     {
         _scannerFactory = scannerFactory;
         _logService = logService;
-
-        InitializeScanners();
-    }
-
-    private void InitializeScanners()
-    {
-        Scanners.Clear();
-        Scanners.Add(new ScannerProgressItem { Name = "AppData", Status = "Pending" });
-        Scanners.Add(new ScannerProgressItem { Name = "System Folders", Status = "Pending" });
-        Scanners.Add(new ScannerProgressItem { Name = "Prefetch", Status = "Pending" });
-        Scanners.Add(new ScannerProgressItem { Name = "Registry", Status = "Pending" });
-        Scanners.Add(new ScannerProgressItem { Name = "Steam", Status = "Pending" });
-        Scanners.Add(new ScannerProgressItem { Name = "Processes", Status = "Pending" });
-        Scanners.Add(new ScannerProgressItem { Name = "Recent Files", Status = "Pending" });
+        TotalScanners = _scannerFactory.GetScannerCount();
     }
 
     [RelayCommand]
@@ -69,94 +42,102 @@ public partial class ScanViewModel : ViewModelBase
 
         IsReadyToScan = false;
         IsScanning = true;
-        _startTime = DateTime.Now;
         _results.Clear();
-        CompletedScanners = 0;
-        OverallProgress = 0;
-
-        // Start elapsed timer
-        _elapsedTimer = new System.Windows.Threading.DispatcherTimer
-        {
-            Interval = TimeSpan.FromSeconds(1)
-        };
-        _elapsedTimer.Tick += (s, e) =>
-        {
-            var elapsed = DateTime.Now - _startTime;
-            ElapsedTime = $"{elapsed.Minutes:D2}:{elapsed.Seconds:D2}";
-        };
-        _elapsedTimer.Start();
 
         _cts = new CancellationTokenSource();
 
         try
         {
-            var scannersList = new[]
-            {
-                ("AppData", (Func<Core.Scanner.BaseScannerAsync>)(() => _scannerFactory.CreateAppDataScanner())),
-                ("System Folders", () => _scannerFactory.CreateSystemScanner()),
-                ("Prefetch", () => _scannerFactory.CreatePrefetchScanner()),
-                ("Registry", () => _scannerFactory.CreateRegistryScanner()),
-                ("Steam", () => _scannerFactory.CreateSteamScanner()),
-                ("Processes", () => _scannerFactory.CreateProcessScanner()),
-                ("Recent Files", () => _scannerFactory.CreateRecentFileScanner())
-            };
+            var scanners = _scannerFactory.CreateAllScanners().ToList();
 
-            for (int i = 0; i < scannersList.Length; i++)
+            foreach (var scanner in scanners)
             {
                 if (_cts.Token.IsCancellationRequested) break;
 
-                var (name, createScanner) = scannersList[i];
-                CurrentScannerName = name;
-
-                // Update UI
-                var scannerItem = Scanners[i];
-                scannerItem.Status = "Scanning...";
-                scannerItem.IsActive = true;
-
                 try
                 {
-                    using var scanner = createScanner();
-                    var result = await scanner.ScanAsync(_cts.Token);
-                    _results.Add((name, result));
-
-                    scannerItem.FindingsCount = result.Count;
-                    scannerItem.Status = result.Count > 0 ? $"{result.Count} found" : "Clean";
-                    scannerItem.IsComplete = true;
+                    using (scanner)
+                    {
+                        var result = await scanner.ScanAsync(_cts.Token);
+                        _results.Add((scanner.GetType().Name.Replace("Async", "").Replace("Scanner", ""), result));
+                    }
                 }
                 catch (OperationCanceledException)
                 {
-                    scannerItem.Status = "Cancelled";
                     break;
                 }
                 catch (Exception ex)
                 {
-                    _logService.LogError($"Scanner {name} failed", ex);
-                    scannerItem.Status = "Error";
-                    _results.Add((name, new ScanResult { Success = false, Error = ex.Message }));
+                    _logService.LogError($"Scanner failed", ex);
                 }
-                finally
-                {
-                    scannerItem.IsActive = false;
-                }
-
-                CompletedScanners = i + 1;
-                OverallProgress = (CompletedScanners * 100) / TotalScanners;
             }
         }
         finally
         {
-            _elapsedTimer?.Stop();
             IsScanning = false;
             _cts?.Dispose();
             _cts = null;
         }
 
-        // Navigate to results
-        CurrentScannerName = "Complete!";
-        await Task.Delay(500);
+        // Save results to file
+        await SaveResultsToFile();
 
-        var mainVm = App.Services.GetRequiredService<MainViewModel>();
-        mainVm.ShowResultsView(_results);
+        // Return to ready state
+        IsReadyToScan = true;
+    }
+
+    private async Task SaveResultsToFile()
+    {
+        var saveDialog = new SaveFileDialog
+        {
+            Title = Localization.CurrentLanguage == "ru" ? "Сохранить результаты" : "Save Results",
+            Filter = "Text files (*.txt)|*.txt",
+            DefaultExt = "txt",
+            FileName = $"custosAC_scan_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt"
+        };
+
+        if (saveDialog.ShowDialog() == true)
+        {
+            var sb = new StringBuilder();
+
+            // Simple clean header
+            sb.AppendLine("==============================================================");
+            sb.AppendLine("                    custosAC Scan Results                     ");
+            sb.AppendLine($"                     {DateTime.Now:yyyy-MM-dd HH:mm:ss}                      ");
+            sb.AppendLine("==============================================================");
+            sb.AppendLine();
+
+            int totalFindings = 0;
+
+            foreach (var (name, result) in _results)
+            {
+                if (!result.Success)
+                {
+                    sb.AppendLine($"[ERROR] {name}: {result.Error}");
+                    continue;
+                }
+
+                if (result.Count > 0)
+                {
+                    sb.AppendLine($"--- {name} ({result.Count} findings) ---");
+                    sb.AppendLine();
+
+                    foreach (var finding in result.Findings)
+                    {
+                        sb.AppendLine($"  * {finding}");
+                    }
+                    sb.AppendLine();
+
+                    totalFindings += result.Count;
+                }
+            }
+
+            sb.AppendLine("==============================================================");
+            sb.AppendLine($"Total findings: {totalFindings}");
+            sb.AppendLine("==============================================================");
+
+            await File.WriteAllTextAsync(saveDialog.FileName, sb.ToString());
+        }
     }
 
     [RelayCommand]
@@ -164,22 +145,4 @@ public partial class ScanViewModel : ViewModelBase
     {
         _cts?.Cancel();
     }
-}
-
-public partial class ScannerProgressItem : ObservableObject
-{
-    [ObservableProperty]
-    private string _name = "";
-
-    [ObservableProperty]
-    private string _status = "Pending";
-
-    [ObservableProperty]
-    private int _findingsCount;
-
-    [ObservableProperty]
-    private bool _isActive;
-
-    [ObservableProperty]
-    private bool _isComplete;
 }

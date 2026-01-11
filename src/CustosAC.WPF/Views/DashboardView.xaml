@@ -15,7 +15,7 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,25">
-            <TextBlock Text="Welcome"
+            <TextBlock Text="{Binding Localization.Strings.Welcome}"
                        FontSize="28" FontWeight="Bold"
                        Foreground="{StaticResource TextPrimaryBrush}"/>
             <TextBlock Text="custosAC - cheat scanner"
@@ -46,7 +46,7 @@
                         <materialDesign:PackIcon Kind="InformationOutline" Width="24" Height="24"
                                                  Foreground="{StaticResource SecondaryBrush}"
                                                  VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <TextBlock Text="Info"
+                        <TextBlock Text="{Binding Localization.Strings.Info}"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{StaticResource SecondaryBrush}"
                                    VerticalAlignment="Center"/>
@@ -64,7 +64,7 @@
                                        FontFamily="{StaticResource MuseoSansBold}"/>
                         </StackPanel>
 
-                        <TextBlock Text="{Binding InfoText}"
+                        <TextBlock Text="{Binding Localization.Strings.WelcomeMessage}"
                                    FontSize="15"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
@@ -75,7 +75,7 @@
                     </StackPanel>
 
                     <!-- Footer -->
-                    <TextBlock Grid.Row="2" Text="for COBRA servers"
+                    <TextBlock Grid.Row="2" Text="{Binding Localization.Strings.ForCobraServers}"
                                Style="{StaticResource SubtitleStyle}"
                                HorizontalAlignment="Center"
                                Margin="0,20,0,0"/>
@@ -102,7 +102,7 @@
                             <materialDesign:PackIcon Kind="NoteTextOutline" Width="24" Height="24"
                                                      Foreground="{StaticResource SecondaryBrush}"
                                                      VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="Changelog"
+                            <TextBlock Text="{Binding Localization.Strings.Changelog}"
                                        FontSize="18" FontWeight="SemiBold"
                                        Foreground="{StaticResource SecondaryBrush}"
                                        VerticalAlignment="Center"/>
@@ -151,7 +151,7 @@
                                 </EventTrigger>
                             </materialDesign:PackIcon.Triggers>
                         </materialDesign:PackIcon>
-                        <TextBlock Text="Loading..."
+                        <TextBlock Text="{Binding Localization.Strings.Loading}"
                                    Style="{StaticResource SubtitleStyle}"
                                    HorizontalAlignment="Center" Margin="0,10,0,0"/>
                     </StackPanel>

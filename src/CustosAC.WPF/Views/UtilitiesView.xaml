@@ -16,10 +16,10 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,25">
-            <TextBlock Text="Utilities"
+            <TextBlock Text="{Binding Localization.Strings.Utilities}"
                        FontSize="28" FontWeight="Bold"
                        Foreground="{StaticResource TextPrimaryBrush}"/>
-            <TextBlock Text="Useful tools for anti-cheat verification"
+            <TextBlock Text="{Binding Localization.Strings.UtilitiesSubtitle}"
                        Style="{StaticResource SubtitleStyle}"
                        Margin="0,5,0,0"/>
         </StackPanel>
@@ -62,10 +62,10 @@
                         <TextBlock Grid.Row="1" TextWrapping="Wrap"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    FontSize="13" Margin="0,0,0,15"
-                                   Text="Shows computer activity log including program executions, file operations and more"/>
+                                   Text="{Binding Localization.Strings.LastActivityViewDesc}"/>
 
                         <!-- Button -->
-                        <Button Grid.Row="2" Content="OPEN WEBSITE"
+                        <Button Grid.Row="2" Content="{Binding Localization.Strings.OpenWebsite}"
                                 Command="{Binding OpenLastActivityViewCommand}"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 HorizontalAlignment="Stretch"/>
@@ -106,10 +106,10 @@
                         <TextBlock Grid.Row="1" TextWrapping="Wrap"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    FontSize="13" Margin="0,0,0,15"
-                                   Text="Lists all USB devices ever connected to the computer with dates and details"/>
+                                   Text="{Binding Localization.Strings.UsbDeviewDesc}"/>
 
                         <!-- Button -->
-                        <Button Grid.Row="2" Content="OPEN WEBSITE"
+                        <Button Grid.Row="2" Content="{Binding Localization.Strings.OpenWebsite}"
                                 Command="{Binding OpenUsbDeviewCommand}"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 HorizontalAlignment="Stretch"/>
@@ -150,10 +150,10 @@
                         <TextBlock Grid.Row="1" TextWrapping="Wrap"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    FontSize="13" Margin="0,0,0,15"
-                                   Text="Instant file search tool that indexes all files on your drives"/>
+                                   Text="{Binding Localization.Strings.EverythingDesc}"/>
 
                         <!-- Button -->
-                        <Button Grid.Row="2" Content="OPEN WEBSITE"
+                        <Button Grid.Row="2" Content="{Binding Localization.Strings.OpenWebsite}"
                                 Command="{Binding OpenEverythingCommand}"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 HorizontalAlignment="Stretch"/>
@@ -194,10 +194,10 @@
                         <TextBlock Grid.Row="1" TextWrapping="Wrap"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    FontSize="13" Margin="0,0,0,15"
-                                   Text="Advanced system monitor and process viewer (formerly Process Hacker)"/>
+                                   Text="{Binding Localization.Strings.SystemInformerDesc}"/>
 
                         <!-- Button -->
-                        <Button Grid.Row="2" Content="OPEN WEBSITE"
+                        <Button Grid.Row="2" Content="{Binding Localization.Strings.OpenWebsite}"
                                 Command="{Binding OpenSystemInformerCommand}"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 HorizontalAlignment="Stretch"/>

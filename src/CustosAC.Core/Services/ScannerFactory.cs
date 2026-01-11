@@ -82,4 +82,9 @@ public class ScannerFactory
     }
 
     public CheatHashDatabase GetHashDatabase() => _hashDatabase;
+
+    /// <summary>
+    /// Gets the total number of available scanners
+    /// </summary>
+    public int GetScannerCount() => 9; // AppData, System, Prefetch, Registry, Steam, Process, RecentFile, BrowserHistory, DnsCache
 }

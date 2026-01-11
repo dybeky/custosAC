@@ -16,10 +16,10 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,30">
-            <TextBlock Text="Settings"
+            <TextBlock Text="{Binding Localization.Strings.Settings}"
                        FontSize="28" FontWeight="Bold"
                        Foreground="{StaticResource TextPrimaryBrush}"/>
-            <TextBlock Text="Configure custosAC preferences"
+            <TextBlock Text="{Binding Localization.Strings.SettingsSubtitle}"
                        Style="{StaticResource SubtitleStyle}"
                        Margin="0,5,0,0"/>
         </StackPanel>
@@ -27,57 +27,45 @@
         <!-- Settings Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
+                <!-- Language Section -->
+                <Border Background="{StaticResource SurfaceBrush}"
+                        CornerRadius="12" Padding="20" Margin="0,0,0,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Localization.Strings.Language}"
+                                       FontSize="15"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding Localization.Strings.LanguageDesc}"
+                                       Style="{StaticResource SubtitleStyle}"
+                                       FontSize="12"/>
+                        </StackPanel>
+                        <ComboBox Grid.Column="1"
+                                  SelectedIndex="{Binding SelectedLanguageIndex}"
+                                  Width="80"
+                                  VerticalAlignment="Center"
+                                  Background="{StaticResource PrimaryBrush}"
+                                  Foreground="{StaticResource TextPrimaryBrush}">
+                            <ComboBoxItem Content="EN"/>
+                            <ComboBoxItem Content="RU"/>
+                        </ComboBox>
+                    </Grid>
+                </Border>
+
                 <!-- Updates Section -->
                 <Border Background="{StaticResource SurfaceBrush}"
                         CornerRadius="12" Padding="20" Margin="0,0,0,15">
                     <StackPanel>
-                        <TextBlock Text="Updates"
+                        <TextBlock Text="{Binding Localization.Strings.Updates}"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{StaticResource SecondaryBrush}"
                                    Margin="0,0,0,15"/>
 
-                        <!-- Check updates on startup -->
-                        <Grid Margin="0,0,0,15">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Check for updates on startup"
-                                           FontSize="15"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Automatically check for new versions when the app starts"
-                                           Style="{StaticResource SubtitleStyle}"
-                                           FontSize="12"/>
-                            </StackPanel>
-                            <ToggleButton Grid.Column="1"
-                                          Style="{StaticResource MinimalToggleStyle}"
-                                          IsChecked="{Binding CheckUpdatesOnStartup}"
-                                          VerticalAlignment="Center"/>
-                        </Grid>
-
-                        <!-- Auto download updates -->
-                        <Grid Margin="0,0,0,15">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Auto-download updates"
-                                           FontSize="15"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Automatically download updates when available"
-                                           Style="{StaticResource SubtitleStyle}"
-                                           FontSize="12"/>
-                            </StackPanel>
-                            <ToggleButton Grid.Column="1"
-                                          Style="{StaticResource MinimalToggleStyle}"
-                                          IsChecked="{Binding AutoDownloadUpdates}"
-                                          VerticalAlignment="Center"/>
-                        </Grid>
-
                         <!-- Manual check button -->
-                        <Button Content="CHECK FOR UPDATES"
+                        <Button Content="{Binding Localization.Strings.CheckForUpdates}"
                                 Command="{Binding CheckForUpdatesCommand}"
                                 Style="{StaticResource OutlinedButtonStyle}"
                                 HorizontalAlignment="Left"/>
@@ -88,7 +76,7 @@
                 <Border Background="{StaticResource SurfaceBrush}"
                         CornerRadius="12" Padding="20" Margin="0,0,0,15">
                     <StackPanel>
-                        <TextBlock Text="About"
+                        <TextBlock Text="{Binding Localization.Strings.About}"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{StaticResource SecondaryBrush}"
                                    Margin="0,0,0,15"/>
@@ -98,11 +86,11 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Version:"
+                            <TextBlock Text="{Binding Localization.Strings.Version}"
                                        Style="{StaticResource SubtitleStyle}"
                                        Margin="0,0,10,0"/>
                             <TextBlock Grid.Column="1"
-                                       Text="{Binding CurrentVersion, StringFormat='v{0}'}"
+                                       Text="{Binding CurrentVersion}"
                                        Foreground="{StaticResource TextPrimaryBrush}"/>
                         </Grid>
 
@@ -111,7 +99,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Developer:"
+                            <TextBlock Text="{Binding Localization.Strings.Developer}"
                                        Style="{StaticResource SubtitleStyle}"
                                        Margin="0,0,10,0"/>
                             <TextBlock Grid.Column="1"
@@ -119,7 +107,7 @@
                                        Foreground="{StaticResource TextPrimaryBrush}"/>
                         </Grid>
 
-                        <Button Content="VIEW ON GITHUB"
+                        <Button Content="{Binding Localization.Strings.ViewOnGitHub}"
                                 Command="{Binding OpenGitHubCommand}"
                                 Style="{StaticResource OutlinedButtonStyle}"
                                 HorizontalAlignment="Left"/>
@@ -132,7 +120,7 @@
                         BorderBrush="{StaticResource ErrorBrush}"
                         BorderThickness="1">
                     <StackPanel>
-                        <TextBlock Text="Danger Zone"
+                        <TextBlock Text="{Binding Localization.Strings.DangerZone}"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{StaticResource ErrorBrush}"
                                    Margin="0,0,0,15"/>
@@ -144,10 +132,10 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Delete program after use"
+                                <TextBlock Text="{Binding Localization.Strings.DeleteAfterUse}"
                                            FontSize="15"
                                            Foreground="{StaticResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Automatically delete custosAC when you close it"
+                                <TextBlock Text="{Binding Localization.Strings.DeleteAfterUseDesc}"
                                            Style="{StaticResource SubtitleStyle}"
                                            FontSize="12"/>
                             </StackPanel>
@@ -157,7 +145,7 @@
                                           VerticalAlignment="Center"/>
                         </Grid>
 
-                        <Button Content="DELETE PROGRAM NOW"
+                        <Button Content="{Binding Localization.Strings.DeleteProgramNow}"
                                 Command="{Binding DeleteProgramCommand}"
                                 Style="{StaticResource CancelButtonStyle}"
                                 HorizontalAlignment="Left"/>
@@ -168,7 +156,7 @@
 
         <!-- Back Button -->
         <Button Grid.Row="2"
-                Content="BACK"
+                Content="{Binding Localization.Strings.Back}"
                 Command="{Binding GoBackCommand}"
                 Style="{StaticResource OutlinedButtonStyle}"
                 HorizontalAlignment="Left"

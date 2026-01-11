@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CustosAC.Core.Services;
 using CustosAC.WPF.ViewModels.Base;
 using Microsoft.Win32;
 
@@ -11,6 +12,8 @@ public partial class ManualViewModel : ViewModelBase
 {
     [ObservableProperty]
     private string _statusMessage = "";
+
+    public LocalizationService Localization => LocalizationService.Instance;
 
     // Internet/Network Data Usage
     [RelayCommand]

@@ -186,10 +186,189 @@
 
         <!-- Footer -->
         <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20,10">
-            <TextBlock Text="custosAC ver. 2.1"
-                       Foreground="{StaticResource TextSecondaryBrush}"
+            <TextBlock Foreground="{StaticResource TextSecondaryBrush}"
                        HorizontalAlignment="Center"
-                       VerticalAlignment="Center"/>
+                       VerticalAlignment="Center">
+                <Run Text="custosAC "/>
+                <Run Text="{Binding DisplayVersion}"/>
+            </TextBlock>
         </Border>
+
+        <!-- Update Overlay with Blur Effect -->
+        <Grid x:Name="UpdateOverlay" Grid.RowSpan="3" Panel.ZIndex="200"
+              Visibility="{Binding ShowUpdateOverlay, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+            <!-- Blurred/Darkened Background -->
+            <Border Background="#CC000000"/>
+
+            <!-- Update Available Card (when NOT up to date) -->
+            <Border Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="16"
+                    Padding="40,35"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    MinWidth="400"
+                    MaxWidth="500"
+                    Visibility="{Binding IsUpToDate, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                <Border.Effect>
+                    <DropShadowEffect Color="Black" BlurRadius="30" ShadowDepth="5" Opacity="0.5"/>
+                </Border.Effect>
+
+                <StackPanel>
+                    <!-- Update Icon -->
+                    <Border Background="{StaticResource SecondaryBrush}"
+                            CornerRadius="50"
+                            Width="80" Height="80"
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,25">
+                        <materialDesign:PackIcon Kind="Update"
+                                                 Width="40" Height="40"
+                                                 Foreground="White"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Title -->
+                    <TextBlock Text="{Binding Localization.Strings.UpdateAvailable}"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,8"/>
+
+                    <!-- Subtitle -->
+                    <TextBlock Text="{Binding Localization.Strings.NewVersionAvailable}"
+                               FontSize="14"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,25"/>
+
+                    <!-- Version Info Card -->
+                    <Border Background="{StaticResource PrimaryBrush}"
+                            CornerRadius="10"
+                            Padding="20,15"
+                            Margin="0,0,0,30">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Current Version -->
+                            <TextBlock Grid.Row="0" Grid.Column="0"
+                                       Text="{Binding Localization.Strings.CurrentVersion}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="13"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding DisplayVersion}"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"/>
+
+                            <!-- Latest Version -->
+                            <TextBlock Grid.Row="1" Grid.Column="0"
+                                       Text="{Binding Localization.Strings.LatestVersion}"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="13"
+                                       Margin="0,8,0,0"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                       Text="{Binding LatestVersion}"
+                                       Foreground="{StaticResource SecondaryBrush}"
+                                       FontSize="13"
+                                       FontWeight="Bold"
+                                       Margin="0,8,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Buttons -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="15"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Dismiss Button -->
+                        <Button Grid.Column="0"
+                                Content="{Binding Localization.Strings.Dismiss}"
+                                Command="{Binding DismissUpdateCommand}"
+                                Style="{StaticResource OutlinedButtonStyle}"
+                                HorizontalAlignment="Stretch"
+                                Padding="20,14"/>
+
+                        <!-- Update Button -->
+                        <Button Grid.Column="2"
+                                Content="{Binding Localization.Strings.Update}"
+                                Command="{Binding OpenUpdateCommand}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                HorizontalAlignment="Stretch"
+                                Padding="20,14"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Up To Date Card (when IS up to date) -->
+            <Border Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="16"
+                    Padding="40,35"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    MinWidth="380"
+                    Visibility="{Binding IsUpToDate, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Border.Effect>
+                    <DropShadowEffect Color="Black" BlurRadius="30" ShadowDepth="5" Opacity="0.5"/>
+                </Border.Effect>
+
+                <StackPanel>
+                    <!-- Check Icon -->
+                    <Border Background="{StaticResource SuccessBrush}"
+                            CornerRadius="50"
+                            Width="80" Height="80"
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,25">
+                        <materialDesign:PackIcon Kind="Check"
+                                                 Width="45" Height="45"
+                                                 Foreground="White"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Title -->
+                    <TextBlock Text="{Binding Localization.Strings.UpToDate}"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,8"/>
+
+                    <!-- Subtitle -->
+                    <TextBlock Text="{Binding Localization.Strings.YouHaveLatestVersion}"
+                               FontSize="14"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,10"/>
+
+                    <!-- Version -->
+                    <TextBlock Text="{Binding DisplayVersion}"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource SecondaryBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,30"/>
+
+                    <!-- OK Button -->
+                    <Button Content="{Binding Localization.Strings.Ok}"
+                            Command="{Binding DismissUpdateCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            HorizontalAlignment="Center"
+                            MinWidth="150"
+                            Padding="30,14"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

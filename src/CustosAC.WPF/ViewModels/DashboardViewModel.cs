@@ -1,5 +1,4 @@
 using System.Net.Http;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -10,14 +9,14 @@ namespace CustosAC.WPF.ViewModels;
 
 public partial class DashboardViewModel : ViewModelBase
 {
-    private const string GitHubRepo = "dybeky/custosAC";
     private const string ChangelogUrl = "https://raw.githubusercontent.com/dybeky/custosAC/master/change.md";
+    private readonly VersionService _versionService;
 
     [ObservableProperty]
-    private string _changelog = "Loading changelog...";
+    private string _changelog = "";
 
     [ObservableProperty]
-    private string _releaseVersion = "";
+    private string _releaseVersion = "...";
 
     [ObservableProperty]
     private string _releaseDate = "";
@@ -25,60 +24,53 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isLoadingChangelog = true;
 
-    [ObservableProperty]
-    private string _infoText = "Программа написана для серверов COBRA, для выявления стороннего ПО.";
+    public LocalizationService Localization => LocalizationService.Instance;
 
-    public DashboardViewModel(CheatHashDatabase hashDatabase, KeywordMatcherService keywordMatcher)
+    public DashboardViewModel(CheatHashDatabase hashDatabase, KeywordMatcherService keywordMatcher, VersionService versionService)
     {
-        LoadChangelogAsync();
+        _versionService = versionService;
+        Changelog = Localization.Strings.Loading;
+        LoadDataAsync();
     }
 
-    private async void LoadChangelogAsync()
+    private async void LoadDataAsync()
     {
+        // Load version from centralized service
+        await _versionService.LoadVersionAsync();
+
+        string changelog = "";
+
         try
         {
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
             client.Timeout = TimeSpan.FromSeconds(15);
 
-            // Load version from GitHub releases
-            var releaseTask = client.GetStringAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
-
             // Load changelog from change.md
-            var changelogTask = client.GetStringAsync(ChangelogUrl);
+            var changelogResponse = await client.GetAsync(ChangelogUrl);
 
-            await Task.WhenAll(releaseTask, changelogTask);
-
-            // Parse release info
-            using var doc = JsonDocument.Parse(await releaseTask);
-            var tagName = doc.RootElement.GetProperty("tag_name").GetString() ?? "";
-            var publishedAt = doc.RootElement.GetProperty("published_at").GetString();
-
-            // Get changelog content
-            var changelogContent = await changelogTask;
-            changelogContent = CleanMarkdown(changelogContent);
-
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            if (changelogResponse.IsSuccessStatusCode)
             {
-                ReleaseVersion = tagName;
-                Changelog = changelogContent;
-
-                if (DateTime.TryParse(publishedAt, out var date))
-                {
-                    ReleaseDate = date.ToString("dd.MM.yyyy");
-                }
-
-                IsLoadingChangelog = false;
-            });
+                changelog = await changelogResponse.Content.ReadAsStringAsync();
+                changelog = CleanMarkdown(changelog);
+            }
+            else
+            {
+                changelog = Localization.Strings.ChangelogNotFound;
+            }
         }
         catch
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                Changelog = "Failed to load changelog. Check your internet connection.";
-                IsLoadingChangelog = false;
-            });
+            changelog = Localization.Strings.FailedToLoad;
         }
+
+        await Application.Current.Dispatcher.InvokeAsync(() =>
+        {
+            ReleaseVersion = _versionService.Version;
+            ReleaseDate = _versionService.ReleaseDate;
+            Changelog = changelog;
+            IsLoadingChangelog = false;
+        });
     }
 
     private static string CleanMarkdown(string text)
