@@ -44,7 +44,7 @@ public partial class DashboardViewModel : ViewModelBase
         {
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(30);
 
             // Load changelog from change.md
             var changelogResponse = await client.GetAsync(ChangelogUrl);

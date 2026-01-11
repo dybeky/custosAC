@@ -45,6 +45,7 @@ public partial class ScanViewModel : ViewModelBase
         _results.Clear();
 
         _cts = new CancellationTokenSource();
+        bool wasCancelled = false;
 
         try
         {
@@ -52,7 +53,11 @@ public partial class ScanViewModel : ViewModelBase
 
             foreach (var scanner in scanners)
             {
-                if (_cts.Token.IsCancellationRequested) break;
+                if (_cts.Token.IsCancellationRequested)
+                {
+                    wasCancelled = true;
+                    break;
+                }
 
                 try
                 {
@@ -64,6 +69,7 @@ public partial class ScanViewModel : ViewModelBase
                 }
                 catch (OperationCanceledException)
                 {
+                    wasCancelled = true;
                     break;
                 }
                 catch (Exception ex)
@@ -79,8 +85,11 @@ public partial class ScanViewModel : ViewModelBase
             _cts = null;
         }
 
-        // Save results to file
-        await SaveResultsToFile();
+        // Save results to file only if not cancelled
+        if (!wasCancelled && _results.Count > 0)
+        {
+            await SaveResultsToFile();
+        }
 
         // Return to ready state
         IsReadyToScan = true;

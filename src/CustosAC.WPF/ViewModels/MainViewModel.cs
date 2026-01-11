@@ -75,7 +75,63 @@ public partial class MainViewModel : ViewModelBase
             {
                 DisplayVersion = _versionService.Version;
             });
+
+            // Auto-check for updates on startup
+            await Task.Delay(500);
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+            {
+                await CheckUpdateSilent();
+            });
         });
+    }
+
+    private async Task CheckUpdateSilent()
+    {
+        if (IsCheckingUpdate) return;
+
+        IsCheckingUpdate = true;
+
+        try
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
+            client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+            client.Timeout = TimeSpan.FromSeconds(30);
+
+            var response = await client.GetAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
+
+            if (!response.IsSuccessStatusCode) return;
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+
+            var latestVersion = doc.RootElement.GetProperty("name").GetString()
+                ?? doc.RootElement.GetProperty("tag_name").GetString()
+                ?? "N/A";
+            var downloadUrl = doc.RootElement.GetProperty("html_url").GetString();
+
+            LatestVersion = latestVersion;
+            UpdateUrl = downloadUrl;
+
+            var currentVersion = DisplayVersion.Trim();
+            var latest = latestVersion.Trim();
+
+            IsUpToDate = string.Equals(currentVersion, latest, StringComparison.OrdinalIgnoreCase);
+
+            // Only show overlay if update is available
+            if (!IsUpToDate)
+            {
+                ShowUpdateOverlay = true;
+            }
+        }
+        catch
+        {
+            // Silent fail - don't show error on startup
+        }
+        finally
+        {
+            IsCheckingUpdate = false;
+        }
     }
 
     [RelayCommand]
@@ -120,7 +176,7 @@ public partial class MainViewModel : ViewModelBase
             using var client = new HttpClient();
             client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
             client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-            client.Timeout = TimeSpan.FromSeconds(15);
+            client.Timeout = TimeSpan.FromSeconds(30);
 
             var response = await client.GetAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
 
