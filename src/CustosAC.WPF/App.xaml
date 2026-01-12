@@ -21,6 +21,7 @@
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
             <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
             <converters:ProgressToWidthConverter x:Key="ProgressToWidthConverter" MaxWidth="700"/>
+            <converters:StringEqualsConverter x:Key="StringEqualsConverter" />
 
             <!-- View DataTemplates -->
             <DataTemplate DataType="{x:Type vm:DashboardViewModel}">

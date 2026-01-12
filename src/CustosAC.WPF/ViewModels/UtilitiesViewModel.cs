@@ -45,7 +45,7 @@ public partial class UtilitiesViewModel : ViewModelBase
     {
         try
         {
-            Process.Start(new ProcessStartInfo
+            using var process = Process.Start(new ProcessStartInfo
             {
                 FileName = url,
                 UseShellExecute = true

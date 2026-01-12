@@ -29,10 +29,10 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _versionService = versionService;
         LoadSettings();
-        LoadVersionAsync();
+        _ = LoadVersionAsync(); // Fire and forget with explicit discard
     }
 
-    private async void LoadVersionAsync()
+    private async Task LoadVersionAsync()
     {
         await _versionService.LoadVersionAsync();
         await Application.Current.Dispatcher.InvokeAsync(() =>
@@ -109,7 +109,7 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private void OpenGitHub()
     {
-        Process.Start(new ProcessStartInfo("https://github.com/dybeky/custosAC") { UseShellExecute = true });
+        using var process = Process.Start(new ProcessStartInfo("https://github.com/dybeky/custosAC") { UseShellExecute = true });
     }
 
     [RelayCommand]
@@ -130,6 +130,8 @@ public partial class SettingsViewModel : ViewModelBase
                 if (exePath != null)
                 {
                     var exeDir = Path.GetDirectoryName(exePath);
+                    if (exeDir == null) return;
+
                     var batchPath = Path.Combine(Path.GetTempPath(), "custosac_uninstall.bat");
 
                     var batchContent = $@"
@@ -140,7 +142,8 @@ del ""%~f0""
 ";
                     File.WriteAllText(batchPath, batchContent);
 
-                    Process.Start(new ProcessStartInfo
+                    // Process needs to run independently after app closes - don't dispose
+                    _ = Process.Start(new ProcessStartInfo
                     {
                         FileName = batchPath,
                         WindowStyle = ProcessWindowStyle.Hidden,

@@ -14,7 +14,13 @@
         TextElement.Foreground="{StaticResource TextPrimaryBrush}"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="14"
-        FontFamily="{StaticResource MuseoSans}">
+        FontFamily="{StaticResource MuseoSans}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        RenderOptions.BitmapScalingMode="HighQuality"
+        RenderOptions.ClearTypeHint="Enabled"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 
     <Grid>
         <!-- Main Content Container (will be blurred when overlay is shown) -->
@@ -120,11 +126,13 @@
             </Grid.ColumnDefinitions>
 
             <!-- Left Sidebar -->
-            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}">
+            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}"
+                    UseLayoutRounding="True" SnapsToDevicePixels="True">
                 <StackPanel VerticalAlignment="Top" Margin="0,20,0,0">
                     <!-- Home/Dashboard -->
                     <Button Style="{StaticResource SidebarButtonStyle}"
                             Command="{Binding NavigateToDashboardCommand}"
+                            Tag="{Binding CurrentNavigation, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Dashboard}"
                             ToolTip="Home">
                         <materialDesign:PackIcon Kind="Home" Width="24" Height="24"/>
                     </Button>
@@ -132,13 +140,15 @@
                     <!-- Manual Check -->
                     <Button Style="{StaticResource SidebarButtonStyle}"
                             Command="{Binding NavigateToManualCommand}"
+                            Tag="{Binding CurrentNavigation, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Manual}"
                             ToolTip="Manual Check">
                         <materialDesign:PackIcon Kind="Eye" Width="24" Height="24"/>
                     </Button>
 
-                    <!-- Scan -->
+                    <!-- Scan (also selected when showing Results) -->
                     <Button Style="{StaticResource SidebarButtonStyle}"
                             Command="{Binding NavigateToScanCommand}"
+                            Tag="{Binding CurrentNavigation, Converter={StaticResource StringEqualsConverter}, ConverterParameter='Scan|Results'}"
                             ToolTip="Scan">
                         <materialDesign:PackIcon Kind="Radar" Width="24" Height="24"/>
                     </Button>
@@ -146,6 +156,7 @@
                     <!-- Utilities -->
                     <Button Style="{StaticResource SidebarButtonStyle}"
                             Command="{Binding NavigateToUtilitiesCommand}"
+                            Tag="{Binding CurrentNavigation, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Utilities}"
                             ToolTip="Utilities">
                         <materialDesign:PackIcon Kind="Toolbox" Width="24" Height="24"/>
                     </Button>
@@ -156,6 +167,7 @@
                     <!-- Settings -->
                     <Button Style="{StaticResource SidebarButtonStyle}"
                             Command="{Binding NavigateToSettingsCommand}"
+                            Tag="{Binding CurrentNavigation, Converter={StaticResource StringEqualsConverter}, ConverterParameter=Settings}"
                             ToolTip="Settings">
                         <materialDesign:PackIcon Kind="Cog" Width="24" Height="24"/>
                     </Button>

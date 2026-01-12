@@ -218,12 +218,12 @@ public partial class FindingItem : ObservableObject
                     if (File.Exists(cleanPath))
                     {
                         // Select the file in explorer
-                        Process.Start("explorer.exe", $"/select,\"{cleanPath}\"");
+                        using var process = Process.Start("explorer.exe", $"/select,\"{cleanPath}\"");
                     }
                     else if (Directory.Exists(cleanPath))
                     {
                         // Open the directory
-                        Process.Start("explorer.exe", $"\"{cleanPath}\"");
+                        using var process = Process.Start("explorer.exe", $"\"{cleanPath}\"");
                     }
                     else
                     {
@@ -231,7 +231,7 @@ public partial class FindingItem : ObservableObject
                         var dir = System.IO.Path.GetDirectoryName(cleanPath);
                         if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
                         {
-                            Process.Start("explorer.exe", $"\"{dir}\"");
+                            using var process = Process.Start("explorer.exe", $"\"{dir}\"");
                         }
                     }
                 }

@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -30,10 +29,10 @@ public partial class DashboardViewModel : ViewModelBase
     {
         _versionService = versionService;
         Changelog = Localization.Strings.Loading;
-        LoadDataAsync();
+        _ = LoadDataAsync(); // Fire and forget with explicit discard
     }
 
-    private async void LoadDataAsync()
+    private async Task LoadDataAsync()
     {
         // Load version from centralized service
         await _versionService.LoadVersionAsync();
@@ -42,12 +41,11 @@ public partial class DashboardViewModel : ViewModelBase
 
         try
         {
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
-            client.Timeout = TimeSpan.FromSeconds(30);
+            var client = HttpClientService.Instance;
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
             // Load changelog from change.md
-            var changelogResponse = await client.GetAsync(ChangelogUrl);
+            var changelogResponse = await client.GetAsync(ChangelogUrl, cts.Token);
 
             if (changelogResponse.IsSuccessStatusCode)
             {

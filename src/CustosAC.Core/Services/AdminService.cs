@@ -27,7 +27,8 @@ public class AdminService
 
         try
         {
-            var exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+            using var currentProcess = Process.GetCurrentProcess();
+            var exePath = Environment.ProcessPath ?? currentProcess.MainModule?.FileName;
             if (string.IsNullOrEmpty(exePath)) return;
 
             var startInfo = new ProcessStartInfo
@@ -38,7 +39,8 @@ public class AdminService
                 WorkingDirectory = Environment.CurrentDirectory
             };
 
-            Process.Start(startInfo);
+            // Process will run independently, but dispose handle before exit
+            using var process = Process.Start(startInfo);
             Environment.Exit(0);
         }
         catch { }

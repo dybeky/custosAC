@@ -10,6 +10,8 @@ public class RegistrySettings
         new() { Path = @"HKEY_CURRENT_USER\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache", Name = "MuiCache (Run History)" },
         new() { Path = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched", Name = "AppSwitched (ALT+TAB History)" },
         new() { Path = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView", Name = "ShowJumpView (Taskbar History)" },
+        new() { Path = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppBadgeUpdated", Name = "AppBadgeUpdated (App Notifications)" },
+        new() { Path = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppLaunch", Name = "AppLaunch (App Launch History)" },
         new() { Path = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run", Name = "Autorun HKCU" },
         new() { Path = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run", Name = "Autorun HKLM" },
         new() { Path = @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers", Name = "Compatibility Flags" },

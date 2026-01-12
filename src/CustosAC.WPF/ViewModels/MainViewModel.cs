@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net.Http;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
@@ -20,6 +19,9 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private ViewModelBase? _currentView;
+
+    [ObservableProperty]
+    private string _currentNavigation = "Dashboard";
 
     [ObservableProperty]
     private string _currentTime = DateTime.Now.ToString("HH:mm:ss");
@@ -94,12 +96,10 @@ public partial class MainViewModel : ViewModelBase
 
         try
         {
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
-            client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-            client.Timeout = TimeSpan.FromSeconds(10); // Faster timeout for startup
+            var client = HttpClientService.Instance;
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
-            var response = await client.GetAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
+            var response = await client.GetAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest", cts.Token);
 
             if (!response.IsSuccessStatusCode) return;
 
@@ -144,30 +144,35 @@ public partial class MainViewModel : ViewModelBase
     private void NavigateToDashboard()
     {
         CurrentView = App.Services.GetRequiredService<DashboardViewModel>();
+        CurrentNavigation = "Dashboard";
     }
 
     [RelayCommand]
     private void NavigateToScan()
     {
         CurrentView = App.Services.GetRequiredService<ScanViewModel>();
+        CurrentNavigation = "Scan";
     }
 
     [RelayCommand]
     private void NavigateToSettings()
     {
         CurrentView = App.Services.GetRequiredService<SettingsViewModel>();
+        CurrentNavigation = "Settings";
     }
 
     [RelayCommand]
     private void NavigateToManual()
     {
         CurrentView = App.Services.GetRequiredService<ManualViewModel>();
+        CurrentNavigation = "Manual";
     }
 
     [RelayCommand]
     private void NavigateToUtilities()
     {
         CurrentView = App.Services.GetRequiredService<UtilitiesViewModel>();
+        CurrentNavigation = "Utilities";
     }
 
     [RelayCommand]
@@ -179,12 +184,10 @@ public partial class MainViewModel : ViewModelBase
 
         try
         {
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "custosAC");
-            client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-            client.Timeout = TimeSpan.FromSeconds(30);
+            var client = HttpClientService.Instance;
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
-            var response = await client.GetAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest");
+            var response = await client.GetAsync($"https://api.github.com/repos/{GitHubRepo}/releases/latest", cts.Token);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -229,7 +232,7 @@ public partial class MainViewModel : ViewModelBase
     {
         if (UpdateUrl != null)
         {
-            Process.Start(new ProcessStartInfo(UpdateUrl) { UseShellExecute = true });
+            using var process = Process.Start(new ProcessStartInfo(UpdateUrl) { UseShellExecute = true });
         }
         ShowUpdateOverlay = false;
     }
@@ -250,5 +253,15 @@ public partial class MainViewModel : ViewModelBase
         var vm = App.Services.GetRequiredService<ResultsViewModel>();
         vm.LoadResults(results);
         CurrentView = vm;
+        CurrentNavigation = "Results";
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _timer?.Stop();
+        }
+        base.Dispose(disposing);
     }
 }

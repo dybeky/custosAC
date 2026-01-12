@@ -239,6 +239,28 @@
                                 </StackPanel>
                             </Button>
 
+                            <!-- AppBadgeUpdated -->
+                            <Button Command="{Binding OpenRegistryAppBadgeUpdatedCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="170">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Bell" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="AppBadgeUpdated" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- AppLaunch -->
+                            <Button Command="{Binding OpenRegistryAppLaunchCommand}"
+                                    Style="{StaticResource OutlinedButtonStyle}"
+                                    Margin="0,0,10,10" MinWidth="140">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="RocketLaunch" Width="18" Height="18"
+                                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="AppLaunch" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
                             <!-- RunMRU -->
                             <Button Command="{Binding OpenRegistryRunMRUCommand}"
                                     Style="{StaticResource OutlinedButtonStyle}"

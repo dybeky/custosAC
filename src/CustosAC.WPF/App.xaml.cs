@@ -34,6 +34,23 @@ public partial class App : Application
         mainWindow.Show();
     }
 
+    protected override void OnExit(ExitEventArgs e)
+    {
+        // Dispose MainViewModel to stop timer and clean up resources
+        if (Services.GetService<MainViewModel>() is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+
+        // Dispose service provider if it supports disposal
+        if (Services is IDisposable serviceDisposable)
+        {
+            serviceDisposable.Dispose();
+        }
+
+        base.OnExit(e);
+    }
+
     private static void ConfigureServices(IServiceCollection services, ConfigRoot config)
     {
         // Configuration
@@ -53,6 +70,7 @@ public partial class App : Application
         services.AddSingleton<KeywordMatcherService>();
         services.AddSingleton<ScannerFactory>();
         services.AddSingleton<VersionService>();
+        services.AddSingleton<GamePathFinderService>();
 
         // UI Service
         services.AddSingleton<IUIService, WpfUIService>();

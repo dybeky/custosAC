@@ -317,23 +317,39 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="border"
-                            Background="{TemplateBinding Background}"
-                            CornerRadius="8"
-                            Padding="8">
-                        <ContentPresenter x:Name="content"
-                                          HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"/>
-                    </Border>
+                    <Grid>
+                        <!-- Selection indicator (left bar) -->
+                        <Border x:Name="selectionIndicator"
+                                Width="3"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Height="24"
+                                CornerRadius="0,2,2,0"
+                                Background="{StaticResource SecondaryBrush}"
+                                Margin="-5,0,0,0"
+                                Opacity="0"/>
+                        <Border x:Name="border"
+                                Background="Transparent"
+                                CornerRadius="8"
+                                Padding="8">
+                            <ContentPresenter x:Name="content"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
+                        <!-- Selected state trigger based on Tag - must be first for proper priority -->
+                        <Trigger Property="Tag" Value="Selected">
+                            <Setter Property="Foreground" Value="{StaticResource SecondaryBrush}"/>
+                            <Setter TargetName="selectionIndicator" Property="Opacity" Value="1"/>
+                            <Setter TargetName="border" Property="Background" Value="#1AFF6B00"/>
+                        </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource SecondaryBrush}"/>
+                            <Setter TargetName="border" Property="Background" Value="#2A2A2A"/>
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="border"
-                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                        To="#2A2A2A"
-                                                        Duration="0:0:0.15"/>
                                         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
                                                          To="1.1"
                                                          Duration="0:0:0.15"/>
@@ -346,10 +362,6 @@
                             <Trigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="border"
-                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                                        To="Transparent"
-                                                        Duration="0:0:0.15"/>
                                         <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
                                                          To="1"
                                                          Duration="0:0:0.15"/>
@@ -359,7 +371,6 @@
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
-                            <Setter Property="Foreground" Value="{StaticResource SecondaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Trigger.EnterActions>

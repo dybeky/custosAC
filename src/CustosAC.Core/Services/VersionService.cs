@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Text.Json;
 
 namespace CustosAC.Core.Services;
@@ -13,7 +12,7 @@ public class VersionService
     private static string? _cachedDate;
     private static string? _lastError;
     private static bool _isLoaded;
-    private static readonly object _lock = new();
+    private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public string Version => _cachedVersion ?? "...";
     public string ReleaseDate => _cachedDate ?? "";
@@ -24,61 +23,66 @@ public class VersionService
     {
         if (_isLoaded) return;
 
-        lock (_lock)
-        {
-            if (_isLoaded) return;
-        }
-
+        await _semaphore.WaitAsync();
         try
         {
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-            client.Timeout = TimeSpan.FromSeconds(10);
+            // Double-check after acquiring lock
+            if (_isLoaded) return;
 
-            var url = $"https://api.github.com/repos/{GitHubRepo}/releases/latest";
-            var response = await client.GetAsync(url);
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                var json = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(json);
+                var client = HttpClientService.Instance;
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
-                // Use "name" field for version (e.g., "2.0.0"), fallback to "tag_name"
-                _cachedVersion = doc.RootElement.GetProperty("name").GetString()
-                    ?? doc.RootElement.GetProperty("tag_name").GetString()
-                    ?? "N/A";
+                var url = $"https://api.github.com/repos/{GitHubRepo}/releases/latest";
+                var response = await client.GetAsync(url, cts.Token);
 
-                var publishedAt = doc.RootElement.GetProperty("published_at").GetString();
-                if (DateTime.TryParse(publishedAt, out var date))
+                if (response.IsSuccessStatusCode)
                 {
-                    _cachedDate = date.ToString("dd.MM.yyyy");
+                    var json = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+
+                    // Use "name" field for version (e.g., "2.0.0"), fallback to "tag_name"
+                    _cachedVersion = doc.RootElement.GetProperty("name").GetString()
+                        ?? doc.RootElement.GetProperty("tag_name").GetString()
+                        ?? "N/A";
+
+                    var publishedAt = doc.RootElement.GetProperty("published_at").GetString();
+                    if (DateTime.TryParse(publishedAt, out var date))
+                    {
+                        _cachedDate = date.ToString("dd.MM.yyyy");
+                    }
+                    _lastError = null;
                 }
-                _lastError = null;
+                else
+                {
+                    _lastError = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}";
+                    _cachedVersion = LocalizationService.Instance.Strings.Error + $" ({(int)response.StatusCode})";
+                }
             }
-            else
+            catch (HttpRequestException ex)
             {
-                _lastError = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}";
-                _cachedVersion = $"Ошибка ({(int)response.StatusCode})";
+                _lastError = $"Network: {ex.Message}";
+                _cachedVersion = LocalizationService.Instance.Strings.NetworkUnavailable;
             }
-        }
-        catch (HttpRequestException ex)
-        {
-            _lastError = $"Network: {ex.Message}";
-            _cachedVersion = "Сеть недоступна";
-        }
-        catch (TaskCanceledException)
-        {
-            _lastError = "Timeout";
-            _cachedVersion = "Таймаут";
-        }
-        catch (Exception ex)
-        {
-            _lastError = ex.Message;
-            _cachedVersion = "Ошибка";
+            catch (OperationCanceledException)
+            {
+                _lastError = "Timeout";
+                _cachedVersion = LocalizationService.Instance.Strings.Timeout;
+            }
+            catch (Exception ex)
+            {
+                _lastError = ex.Message;
+                _cachedVersion = LocalizationService.Instance.Strings.Error;
+            }
+            finally
+            {
+                _isLoaded = true;
+            }
         }
         finally
         {
-            _isLoaded = true;
+            _semaphore.Release();
         }
     }
 

@@ -73,9 +73,11 @@ public static class SecurityService
             "fiddler", "ghidra", "radare2"
         };
 
+        Process[]? processes = null;
         try
         {
-            foreach (var process in Process.GetProcesses())
+            processes = Process.GetProcesses();
+            foreach (var process in processes)
             {
                 try
                 {
@@ -95,6 +97,17 @@ public static class SecurityService
             }
         }
         catch { }
+        finally
+        {
+            // Dispose all Process objects to prevent handle leak
+            if (processes != null)
+            {
+                foreach (var proc in processes)
+                {
+                    try { proc.Dispose(); } catch { }
+                }
+            }
+        }
 
         return suspicious;
     }

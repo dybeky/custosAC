@@ -10,10 +10,17 @@ namespace CustosAC.WPF.ViewModels;
 
 public partial class ManualViewModel : ViewModelBase
 {
+    private readonly GamePathFinderService _gamePathFinder;
+
     [ObservableProperty]
     private string _statusMessage = "";
 
     public LocalizationService Localization => LocalizationService.Instance;
+
+    public ManualViewModel(GamePathFinderService gamePathFinder)
+    {
+        _gamePathFinder = gamePathFinder;
+    }
 
     // Internet/Network Data Usage
     [RelayCommand]
@@ -21,7 +28,7 @@ public partial class ManualViewModel : ViewModelBase
     {
         try
         {
-            Process.Start(new ProcessStartInfo
+            using var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "ms-settings:datausage",
                 UseShellExecute = true
@@ -43,7 +50,7 @@ public partial class ManualViewModel : ViewModelBase
             var videosPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Videos");
             if (Directory.Exists(videosPath))
             {
-                Process.Start("explorer.exe", $"\"{videosPath}\"");
+                using var process = Process.Start("explorer.exe", $"\"{videosPath}\"");
                 StatusMessage = "Opening Videos folder...";
             }
             else
@@ -57,30 +64,24 @@ public partial class ManualViewModel : ViewModelBase
         }
     }
 
-    // Unturned folder
+    // Unturned folder - smart search across all drives
     [RelayCommand]
     private void OpenUnturned()
     {
         try
         {
-            var paths = new[]
-            {
-                @"C:\Program Files (x86)\Steam\steamapps\common\Unturned",
-                @"C:\Program Files\Steam\steamapps\common\Unturned",
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Steam", "steamapps", "common", "Unturned")
-            };
+            StatusMessage = "Searching for Unturned...";
 
-            foreach (var path in paths)
+            var unturnedPath = _gamePathFinder.GetUnturnedPath();
+
+            if (!string.IsNullOrEmpty(unturnedPath) && Directory.Exists(unturnedPath))
             {
-                if (Directory.Exists(path))
-                {
-                    Process.Start("explorer.exe", $"\"{path}\"");
-                    StatusMessage = "Opening Unturned folder...";
-                    return;
-                }
+                using var process = Process.Start("explorer.exe", $"\"{unturnedPath}\"");
+                StatusMessage = $"Opening Unturned: {unturnedPath}";
+                return;
             }
 
-            StatusMessage = "Unturned folder not found";
+            StatusMessage = "Unturned folder not found on any drive";
         }
         catch
         {
@@ -97,7 +98,7 @@ public partial class ManualViewModel : ViewModelBase
             var downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             if (Directory.Exists(downloadsPath))
             {
-                Process.Start("explorer.exe", $"\"{downloadsPath}\"");
+                using var process = Process.Start("explorer.exe", $"\"{downloadsPath}\"");
                 StatusMessage = "Opening Downloads folder...";
             }
             else
@@ -118,7 +119,7 @@ public partial class ManualViewModel : ViewModelBase
         try
         {
             var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            Process.Start("explorer.exe", $"\"{appDataPath}\"");
+            using var process = Process.Start("explorer.exe", $"\"{appDataPath}\"");
             StatusMessage = "Opening AppData folder...";
         }
         catch
@@ -134,7 +135,7 @@ public partial class ManualViewModel : ViewModelBase
         try
         {
             var localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            Process.Start("explorer.exe", $"\"{localAppDataPath}\"");
+            using var process = Process.Start("explorer.exe", $"\"{localAppDataPath}\"");
             StatusMessage = "Opening LocalAppData folder...";
         }
         catch
@@ -152,7 +153,7 @@ public partial class ManualViewModel : ViewModelBase
             var prefetchPath = @"C:\Windows\Prefetch";
             if (Directory.Exists(prefetchPath))
             {
-                Process.Start("explorer.exe", $"\"{prefetchPath}\"");
+                using var process = Process.Start("explorer.exe", $"\"{prefetchPath}\"");
                 StatusMessage = "Opening Prefetch folder...";
             }
             else
@@ -168,63 +169,89 @@ public partial class ManualViewModel : ViewModelBase
 
     // Registry - MuiCache
     [RelayCommand]
-    private void OpenRegistryMuiCache()
+    private async Task OpenRegistryMuiCache()
     {
-        OpenRegistryAt(@"HKEY_CURRENT_USER\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache", "MuiCache");
+        await OpenRegistryAtAsync(@"HKEY_CURRENT_USER\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache", "MuiCache");
     }
 
     // Registry - AppSwitched
     [RelayCommand]
-    private void OpenRegistryAppSwitched()
+    private async Task OpenRegistryAppSwitched()
     {
-        OpenRegistryAt(@"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched", "AppSwitched");
+        await OpenRegistryAtAsync(@"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched", "AppSwitched");
     }
 
     // Registry - ShowJumpView (Taskbar jump lists history)
     [RelayCommand]
-    private void OpenRegistryShowJumpView()
+    private async Task OpenRegistryShowJumpView()
     {
-        OpenRegistryAt(@"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView", "ShowJumpView");
+        await OpenRegistryAtAsync(@"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView", "ShowJumpView");
+    }
+
+    // Registry - AppBadgeUpdated (App badge notification history)
+    [RelayCommand]
+    private async Task OpenRegistryAppBadgeUpdated()
+    {
+        await OpenRegistryAtAsync(@"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppBadgeUpdated", "AppBadgeUpdated");
+    }
+
+    // Registry - AppLaunch (Application launch history)
+    [RelayCommand]
+    private async Task OpenRegistryAppLaunch()
+    {
+        await OpenRegistryAtAsync(@"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppLaunch", "AppLaunch");
     }
 
     // Registry - RunMRU (Win+R dialog history)
     [RelayCommand]
-    private void OpenRegistryRunMRU()
+    private async Task OpenRegistryRunMRU()
     {
-        OpenRegistryAt(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU", "RunMRU");
+        await OpenRegistryAtAsync(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU", "RunMRU");
     }
 
     // Registry - UserAssist (Program usage statistics)
     [RelayCommand]
-    private void OpenRegistryUserAssist()
+    private async Task OpenRegistryUserAssist()
     {
-        OpenRegistryAt(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist", "UserAssist");
+        await OpenRegistryAtAsync(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist", "UserAssist");
     }
 
-    private void OpenRegistryAt(string registryPath, string name)
+    private async Task OpenRegistryAtAsync(string registryPath, string name)
     {
         try
         {
             // Kill any existing regedit processes first
-            foreach (var proc in Process.GetProcessesByName("regedit"))
+            var processes = Process.GetProcessesByName("regedit");
+            try
             {
-                try
+                foreach (var proc in processes)
                 {
-                    proc.Kill();
-                    proc.WaitForExit(1000);
+                    try
+                    {
+                        proc.Kill();
+                        proc.WaitForExit(1000);
+                    }
+                    catch { }
                 }
-                catch { }
+            }
+            finally
+            {
+                // Dispose all process objects to prevent memory leak
+                foreach (var proc in processes)
+                {
+                    try { proc.Dispose(); } catch { }
+                }
             }
 
-            // Small delay to ensure regedit is fully closed
-            System.Threading.Thread.Sleep(200);
+            // Small delay to ensure regedit is fully closed (non-blocking)
+            await Task.Delay(200);
 
             // Set the last key in regedit settings
             using var key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Applets\Regedit");
             key?.SetValue("LastKey", registryPath);
 
             // Start regedit
-            Process.Start(new ProcessStartInfo
+            using var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "regedit.exe",
                 UseShellExecute = true
@@ -246,7 +273,7 @@ public partial class ManualViewModel : ViewModelBase
             var oneDrivePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive");
             if (Directory.Exists(oneDrivePath))
             {
-                Process.Start("explorer.exe", $"\"{oneDrivePath}\"");
+                using var process = Process.Start("explorer.exe", $"\"{oneDrivePath}\"");
                 StatusMessage = "Opening OneDrive folder...";
             }
             else
@@ -260,29 +287,24 @@ public partial class ManualViewModel : ViewModelBase
         }
     }
 
-    // Steam folder
+    // Steam folder - smart search with registry and disk scan
     [RelayCommand]
     private void OpenSteam()
     {
         try
         {
-            var paths = new[]
-            {
-                @"C:\Program Files (x86)\Steam",
-                @"C:\Program Files\Steam"
-            };
+            StatusMessage = "Searching for Steam...";
 
-            foreach (var path in paths)
+            var steamPath = _gamePathFinder.GetSteamPath();
+
+            if (!string.IsNullOrEmpty(steamPath) && Directory.Exists(steamPath))
             {
-                if (Directory.Exists(path))
-                {
-                    Process.Start("explorer.exe", $"\"{path}\"");
-                    StatusMessage = "Opening Steam folder...";
-                    return;
-                }
+                using var process = Process.Start("explorer.exe", $"\"{steamPath}\"");
+                StatusMessage = $"Opening Steam: {steamPath}";
+                return;
             }
 
-            StatusMessage = "Steam folder not found";
+            StatusMessage = "Steam folder not found on any drive";
         }
         catch
         {
@@ -296,7 +318,7 @@ public partial class ManualViewModel : ViewModelBase
     {
         try
         {
-            Process.Start(new ProcessStartInfo
+            using var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "https://t.me/undeadsellerbot",
                 UseShellExecute = true
@@ -315,7 +337,7 @@ public partial class ManualViewModel : ViewModelBase
     {
         try
         {
-            Process.Start(new ProcessStartInfo
+            using var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "https://t.me/MelonySolutionBot",
                 UseShellExecute = true
@@ -334,7 +356,7 @@ public partial class ManualViewModel : ViewModelBase
     {
         try
         {
-            Process.Start(new ProcessStartInfo
+            using var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "windowsdefender://",
                 UseShellExecute = true
@@ -346,7 +368,7 @@ public partial class ManualViewModel : ViewModelBase
             // Fallback to Windows Security settings
             try
             {
-                Process.Start(new ProcessStartInfo
+                using var process = Process.Start(new ProcessStartInfo
                 {
                     FileName = "ms-settings:windowsdefender",
                     UseShellExecute = true
