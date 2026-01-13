@@ -1,0 +1,51 @@
+{
+  "version": "1.0",
+  "lastUpdate": "2026-01-13",
+  "hashes": [
+    {
+      "sha256": "INSERT_REAL_HASH_HERE_64_CHARS_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "sha1": "OPTIONAL_SHA1_HASH_40_CHARS",
+      "md5": "OPTIONAL_MD5_HASH_32_CHARS",
+      "name": "Example Cheat Name",
+      "version": "v1.0",
+      "description": "Description of the cheat",
+      "severity": "CRITICAL",
+      "aliases": [
+        "cheatname",
+        "alternate_name"
+      ],
+      "knownPaths": [
+        "\\Downloads\\",
+        "\\Desktop\\",
+        "\\AppData\\Local\\Temp\\"
+      ],
+      "fileSize": 524288,
+      "firstSeen": "2025-01-01"
+    },
+    {
+      "sha256": "ANOTHER_REAL_HASH_HERE_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+      "name": "Another Known Cheat",
+      "version": "v2.3",
+      "description": "Another cheat loader",
+      "severity": "HIGH",
+      "aliases": [
+        "loader",
+        "injector"
+      ],
+      "knownPaths": [
+        "\\Temp\\"
+      ]
+    }
+  ],
+  "_instructions": {
+    "note": "This is a template file. Replace placeholder hashes with real SHA256 hashes of known cheats.",
+    "severity_levels": [
+      "LOW",
+      "MEDIUM",
+      "HIGH",
+      "CRITICAL"
+    ],
+    "hash_generation": "Use SHA256 hash (64 hex characters). Generate with: certutil -hashfile <file> SHA256",
+    "maintenance": "Update this file regularly with new cheat signatures. The scanner will auto-reload on application restart."
+  }
+}

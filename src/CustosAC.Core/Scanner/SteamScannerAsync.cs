@@ -6,13 +6,14 @@ using CustosAC.Core.Services;
 namespace CustosAC.Core.Scanner;
 
 /// <summary>
-/// Steam accounts scanner
+/// Steam accounts scanner with robust VDF parsing and validation
 /// </summary>
 public class SteamScannerAsync : BaseScannerAsync
 {
-    private const string SteamIdPrefix = "\"7656";
     private readonly PathSettings _pathSettings;
     private readonly LogService? _logService;
+    private readonly EnhancedLogService? _enhancedLog;
+    private readonly VdfParser _vdfParser;
 
     public override string Name => "Steam Scanner";
     public override string Description => "Parsing Steam accounts from loginusers.vdf";
@@ -22,11 +23,15 @@ public class SteamScannerAsync : BaseScannerAsync
         IUIService uiService,
         ScanSettings scanSettings,
         PathSettings pathSettings,
-        LogService? logService = null)
+        LogService? logService = null,
+        EnhancedLogService? enhancedLog = null,
+        VdfParser? vdfParser = null)
         : base(keywordMatcher, uiService, scanSettings)
     {
         _pathSettings = pathSettings;
         _logService = logService;
+        _enhancedLog = enhancedLog;
+        _vdfParser = vdfParser ?? new VdfParser(enhancedLog);
     }
 
     public override async Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
@@ -82,50 +87,48 @@ public class SteamScannerAsync : BaseScannerAsync
         try
         {
             var content = File.ReadAllText(vdfPath);
-            var lines = content.Split('\n');
-            SteamAccount? currentAccount = null;
 
-            foreach (var line in lines)
+            _enhancedLog?.LogDebug(EnhancedLogService.LogCategory.Scanner,
+                $"Parsing VDF file: {vdfPath}", Name);
+
+            // Use robust VDF parser
+            var parsedAccounts = _vdfParser.ParseSteamAccounts(content);
+
+            // Validate each account
+            foreach (var account in parsedAccounts)
             {
-                var trimmedLine = line.Trim();
+                var (isValid, errors) = VdfParser.ValidateAccount(account);
 
-                if (trimmedLine.StartsWith(SteamIdPrefix) && trimmedLine.Contains("\""))
+                if (isValid)
                 {
-                    var parts = trimmedLine.Split('"');
-                    if (parts.Length >= 2)
-                        currentAccount = new SteamAccount { SteamId = parts[1] };
+                    accounts.Add(account);
+                    _enhancedLog?.LogDebug(EnhancedLogService.LogCategory.Validation,
+                        $"Valid Steam account: {account.AccountName} ({account.SteamId})", Name);
                 }
-
-                if (currentAccount != null)
+                else
                 {
-                    if (trimmedLine.Contains("\"AccountName\""))
-                        currentAccount.AccountName = ExtractValue(trimmedLine) ?? "";
-
-                    if (trimmedLine.Contains("\"PersonaName\""))
-                        currentAccount.PersonaName = ExtractValue(trimmedLine) ?? "";
-
-                    if (trimmedLine.Contains("\"RememberPassword\""))
-                        currentAccount.RememberPassword = ExtractValue(trimmedLine) == "1";
-
-                    if (trimmedLine == "}" && !string.IsNullOrEmpty(currentAccount.AccountName))
-                    {
-                        accounts.Add(currentAccount);
-                        currentAccount = null;
-                    }
+                    _enhancedLog?.LogWarning(EnhancedLogService.LogCategory.Validation,
+                        $"Invalid Steam account skipped: {string.Join(", ", errors)}", Name);
+                    _logService?.LogWarning($"Invalid Steam account: {string.Join(", ", errors)}");
                 }
             }
+
+            _enhancedLog?.LogInfo(EnhancedLogService.LogCategory.Scanner,
+                $"Successfully parsed {accounts.Count} valid Steam account(s)", Name);
+        }
+        catch (VdfParser.VdfParseException ex)
+        {
+            var errorMsg = $"VDF parsing error at line {ex.LineNumber}: {ex.Message}";
+            _enhancedLog?.LogError(EnhancedLogService.LogCategory.Scanner, errorMsg, ex, Name);
+            _logService?.LogWarning(errorMsg);
         }
         catch (Exception ex)
         {
-            _logService?.LogWarning($"VDF parsing error: {ex.Message}");
+            var errorMsg = $"Unexpected error parsing VDF: {ex.Message}";
+            _enhancedLog?.LogError(EnhancedLogService.LogCategory.Scanner, errorMsg, ex, Name);
+            _logService?.LogWarning(errorMsg);
         }
 
         return accounts;
-    }
-
-    private static string? ExtractValue(string line)
-    {
-        var parts = line.Split('"');
-        return parts.Length >= 4 ? parts[3] : null;
     }
 }

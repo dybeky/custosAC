@@ -8,11 +8,15 @@ namespace CustosAC.Core.Scanner;
 
 /// <summary>
 /// Browser history scanner - checks for suspicious websites (oplata.info, funpay.com, etc.)
+/// Enhanced with retry logic, proper error handling, and resource management
 /// </summary>
 public class BrowserHistoryScannerAsync : BaseScannerAsync
 {
     private readonly ExternalResourceSettings _externalSettings;
     private readonly string[] _suspiciousUrls;
+    private readonly EnhancedLogService? _enhancedLog;
+    private readonly ScannerExceptionHandler _exceptionHandler;
+    private readonly TempFileManager _tempFileManager;
 
     public override string Name => "Browser History Scanner";
     public override string Description => "Searches browser history for suspicious payment/cheat websites";
@@ -21,7 +25,10 @@ public class BrowserHistoryScannerAsync : BaseScannerAsync
         KeywordMatcherService keywordMatcher,
         IUIService uiService,
         ScanSettings scanSettings,
-        ExternalResourceSettings externalSettings)
+        ExternalResourceSettings externalSettings,
+        EnhancedLogService? enhancedLog = null,
+        ScannerExceptionHandler? exceptionHandler = null,
+        TempFileManager? tempFileManager = null)
         : base(keywordMatcher, uiService, scanSettings)
     {
         _externalSettings = externalSettings;
@@ -29,6 +36,10 @@ public class BrowserHistoryScannerAsync : BaseScannerAsync
             .Select(w => ExtractDomain(w.Url))
             .Where(d => !string.IsNullOrEmpty(d))
             .ToArray();
+
+        _enhancedLog = enhancedLog;
+        _exceptionHandler = exceptionHandler ?? new ScannerExceptionHandler(enhancedLog);
+        _tempFileManager = tempFileManager ?? new TempFileManager(enhancedLog);
     }
 
     private static string ExtractDomain(string url)
@@ -100,27 +111,57 @@ public class BrowserHistoryScannerAsync : BaseScannerAsync
         }
     }
 
-    private void ScanChromiumHistory(string historyPath, string browserName, List<string> findings, CancellationToken cancellationToken)
+    private async void ScanChromiumHistory(string historyPath, string browserName, List<string> findings, CancellationToken cancellationToken)
     {
-        if (!File.Exists(historyPath)) return;
+        if (!File.Exists(historyPath))
+        {
+            _enhancedLog?.LogTrace(EnhancedLogService.LogCategory.Scanner,
+                $"History file does not exist: {historyPath}", browserName);
+            return;
+        }
+
         if (cancellationToken.IsCancellationRequested) return;
+
+        _enhancedLog?.LogDebug(EnhancedLogService.LogCategory.Scanner,
+            $"Scanning {browserName} history", browserName);
+
+        string? tempPath = null;
 
         try
         {
-            // Copy to temp file because browser might lock the database
-            var tempPath = Path.Combine(Path.GetTempPath(), $"custosac_history_{Guid.NewGuid()}.db");
-            File.Copy(historyPath, tempPath, true);
+            // Copy to temp file with retry logic
+            tempPath = await _tempFileManager.CopyToTempAsync(historyPath, Name, cancellationToken);
 
-            try
+            if (tempPath == null)
+            {
+                _enhancedLog?.LogWarning(EnhancedLogService.LogCategory.Scanner,
+                    $"Failed to copy {browserName} history database", browserName);
+                return;
+            }
+
+            // Try to open database with retry
+            await _exceptionHandler.ExecuteWithRetryAsync(async () =>
             {
                 using var connection = new SqliteConnection($"Data Source={tempPath};Mode=ReadOnly");
-                connection.Open();
+
+                // Try to enable WAL mode for concurrent access
+                try
+                {
+                    await connection.OpenAsync(cancellationToken);
+                }
+                catch (SqliteException ex) when (ex.SqliteErrorCode == SQLitePCL.raw.SQLITE_BUSY)
+                {
+                    _enhancedLog?.LogDebug(EnhancedLogService.LogCategory.Scanner,
+                        $"Database busy, will retry: {browserName}", browserName);
+                    throw; // Will be retried
+                }
 
                 var query = "SELECT url, title, last_visit_time FROM urls ORDER BY last_visit_time DESC LIMIT 5000";
                 using var command = new SqliteCommand(query, connection);
-                using var reader = command.ExecuteReader();
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
-                while (reader.Read())
+                var foundCount = 0;
+                while (await reader.ReadAsync(cancellationToken))
                 {
                     if (cancellationToken.IsCancellationRequested) break;
 
@@ -137,23 +178,36 @@ public class BrowserHistoryScannerAsync : BaseScannerAsync
                                 .FirstOrDefault(w => ExtractDomain(w.Url).Equals(suspiciousDomain, StringComparison.OrdinalIgnoreCase))?.Name ?? suspiciousDomain;
 
                             findings.Add($"[{browserName}] {siteName}: {url} | Visited: {dateTime:dd.MM.yyyy HH:mm}");
+                            foundCount++;
                             break;
                         }
                     }
                 }
-            }
-            finally
+
+                if (foundCount > 0)
+                {
+                    _enhancedLog?.LogWarning(EnhancedLogService.LogCategory.Security,
+                        $"Found {foundCount} suspicious URL(s) in {browserName}", browserName);
+                }
+
+            }, Name, $"Scan {browserName} history", historyPath, maxRetries: 3, retryDelaysMs: new[] { 100, 500, 2000 });
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == SQLitePCL.raw.SQLITE_CORRUPT)
+        {
+            _enhancedLog?.LogWarning(EnhancedLogService.LogCategory.Scanner,
+                $"Corrupted database: {browserName} history", browserName);
+        }
+        catch (Exception ex)
+        {
+            _exceptionHandler.HandleException(ex, Name, $"Scan {browserName} history", historyPath);
+        }
+        finally
+        {
+            // Cleanup temp file
+            if (tempPath != null)
             {
-                try { File.Delete(tempPath); } catch { }
+                _tempFileManager.DeleteTempFile(tempPath, Name);
             }
-        }
-        catch (SqliteException)
-        {
-            // Database might be locked or corrupted
-        }
-        catch (Exception)
-        {
-            // Silently ignore errors for individual browsers
         }
     }
 
