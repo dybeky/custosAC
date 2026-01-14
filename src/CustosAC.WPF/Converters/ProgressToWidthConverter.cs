@@ -3,21 +3,27 @@ using System.Windows.Data;
 
 namespace CustosAC.WPF.Converters;
 
-public class ProgressToWidthConverter : IValueConverter
+public class ProgressToWidthConverter : IMultiValueConverter
 {
-    public double MaxWidth { get; set; } = 800; // Default max width
-
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value is int progress)
+        if (values.Length >= 2 &&
+            values[0] is double progress &&
+            values[1] is double containerWidth)
         {
-            // Calculate width based on percentage (0-100)
-            return (progress / 100.0) * MaxWidth;
+            return progress * containerWidth;
         }
-        return 0;
+
+        // Fallback for single value (backwards compatibility)
+        if (values.Length >= 1 && values[0] is int intProgress)
+        {
+            return (intProgress / 100.0) * 280; // Default width
+        }
+
+        return 0.0;
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }

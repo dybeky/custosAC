@@ -66,7 +66,6 @@ public partial class App : Application
         services.AddSingleton<LogService>();
         services.AddSingleton<AdminService>();
         services.AddSingleton<RegistryService>();
-        services.AddSingleton<CheatHashDatabase>();
         services.AddSingleton<KeywordMatcherService>();
         services.AddSingleton<ScannerFactory>();
         services.AddSingleton<VersionService>();

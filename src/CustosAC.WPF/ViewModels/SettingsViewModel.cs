@@ -29,16 +29,30 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _versionService = versionService;
         LoadSettings();
-        _ = LoadVersionAsync(); // Fire and forget with explicit discard
+
+        // Start loading version asynchronously
+        _ = LoadVersionAsync();
     }
 
     private async Task LoadVersionAsync()
     {
-        await _versionService.LoadVersionAsync();
-        await Application.Current.Dispatcher.InvokeAsync(() =>
+        try
         {
-            CurrentVersion = _versionService.Version;
-        });
+            await _versionService.LoadVersionAsync();
+
+            // Null-check for dispatcher to prevent crash during shutdown
+            if (Application.Current?.Dispatcher != null)
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    CurrentVersion = _versionService.Version;
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"SettingsViewModel.LoadVersionAsync failed: {ex.Message}");
+        }
     }
 
     private string GetSettingsPath()
@@ -125,33 +139,63 @@ public partial class SettingsViewModel : ViewModelBase
         {
             try
             {
-                // Create a batch script to delete the program after it closes
-                var exePath = Process.GetCurrentProcess().MainModule?.FileName;
-                if (exePath != null)
+                // Get current process path safely
+                string? exePath;
+                using (var currentProcess = Process.GetCurrentProcess())
                 {
-                    var exeDir = Path.GetDirectoryName(exePath);
-                    if (exeDir == null) return;
+                    exePath = currentProcess.MainModule?.FileName;
+                }
 
-                    var batchPath = Path.Combine(Path.GetTempPath(), "custosac_uninstall.bat");
+                if (string.IsNullOrEmpty(exePath))
+                {
+                    MessageBox.Show("Cannot determine application path.", Localization.Strings.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
-                    var batchContent = $@"
-@echo off
+                var exeDir = Path.GetDirectoryName(exePath);
+                if (string.IsNullOrEmpty(exeDir))
+                {
+                    MessageBox.Show("Cannot determine application directory.", Localization.Strings.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Validate the path is safe to delete
+                var fullPath = Path.GetFullPath(exeDir);
+                var systemRoot = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+                var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                var programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+
+                // Prevent deletion of system directories
+                if (fullPath.StartsWith(systemRoot, StringComparison.OrdinalIgnoreCase) ||
+                    fullPath.Equals(programFiles, StringComparison.OrdinalIgnoreCase) ||
+                    fullPath.Equals(programFilesX86, StringComparison.OrdinalIgnoreCase) ||
+                    fullPath.Length <= 3) // Prevent deletion of drive root
+                {
+                    MessageBox.Show("Cannot delete from protected system directory.", Localization.Strings.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                // Escape special characters for batch script
+                var escapedDir = fullPath.Replace("^", "^^").Replace("&", "^&").Replace("<", "^<").Replace(">", "^>").Replace("|", "^|");
+
+                var batchPath = Path.Combine(Path.GetTempPath(), $"custosac_uninstall_{Guid.NewGuid():N}.bat");
+
+                var batchContent = $@"@echo off
 timeout /t 2 /nobreak >nul
-rd /s /q ""{exeDir}""
+rd /s /q ""{escapedDir}""
 del ""%~f0""
 ";
-                    File.WriteAllText(batchPath, batchContent);
+                File.WriteAllText(batchPath, batchContent);
 
-                    // Process needs to run independently after app closes - don't dispose
-                    _ = Process.Start(new ProcessStartInfo
-                    {
-                        FileName = batchPath,
-                        WindowStyle = ProcessWindowStyle.Hidden,
-                        CreateNoWindow = true
-                    });
+                // Process needs to run independently after app closes - don't dispose
+                _ = Process.Start(new ProcessStartInfo
+                {
+                    FileName = batchPath,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true
+                });
 
-                    Application.Current.Shutdown();
-                }
+                Application.Current?.Shutdown();
             }
             catch (Exception ex)
             {

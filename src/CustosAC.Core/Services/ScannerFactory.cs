@@ -16,7 +16,6 @@ public class ScannerFactory
     private readonly PathSettings _pathSettings;
     private readonly RegistrySettings _registrySettings;
     private readonly ExternalResourceSettings _externalSettings;
-    private readonly CheatHashDatabase _hashDatabase;
     private readonly LogService? _logService;
 
     public ScannerFactory(
@@ -27,7 +26,6 @@ public class ScannerFactory
         PathSettings pathSettings,
         RegistrySettings registrySettings,
         ExternalResourceSettings externalSettings,
-        CheatHashDatabase? hashDatabase = null,
         LogService? logService = null)
     {
         _keywordMatcher = keywordMatcher;
@@ -37,7 +35,6 @@ public class ScannerFactory
         _pathSettings = pathSettings;
         _registrySettings = registrySettings;
         _externalSettings = externalSettings;
-        _hashDatabase = hashDatabase ?? new CheatHashDatabase();
         _logService = logService;
     }
 
@@ -57,10 +54,10 @@ public class ScannerFactory
         => new(_keywordMatcher, _uiService, _scanSettings, _pathSettings, _logService);
 
     public ProcessScannerAsync CreateProcessScanner()
-        => new(_keywordMatcher, _uiService, _scanSettings, _hashDatabase, _logService);
+        => new(_keywordMatcher, _uiService, _scanSettings, _logService);
 
     public RecentFileScannerAsync CreateRecentFileScanner()
-        => new(_keywordMatcher, _uiService, _scanSettings, _hashDatabase, _scanSettings.RecentFilesDays);
+        => new(_keywordMatcher, _uiService, _scanSettings, _scanSettings.RecentFilesDays);
 
     public BrowserHistoryScannerAsync CreateBrowserHistoryScanner()
         => new(_keywordMatcher, _uiService, _scanSettings, _externalSettings);
@@ -80,8 +77,6 @@ public class ScannerFactory
         yield return CreateBrowserHistoryScanner();
         yield return CreateDnsCacheScanner();
     }
-
-    public CheatHashDatabase GetHashDatabase() => _hashDatabase;
 
     /// <summary>
     /// Gets the total number of available scanners

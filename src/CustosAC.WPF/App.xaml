@@ -5,6 +5,7 @@
              xmlns:vm="clr-namespace:CustosAC.WPF.ViewModels"
              xmlns:views="clr-namespace:CustosAC.WPF.Views"
              xmlns:converters="clr-namespace:CustosAC.WPF.Converters">
+
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -20,8 +21,27 @@
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
             <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
-            <converters:ProgressToWidthConverter x:Key="ProgressToWidthConverter" MaxWidth="700"/>
+            <converters:ProgressToWidthConverter x:Key="ProgressToWidthConverter"/>
             <converters:StringEqualsConverter x:Key="StringEqualsConverter" />
+
+            <!-- Global Text Rendering Settings for smooth font rendering -->
+            <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto"/>
+                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
+            </Style>
+
+            <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto"/>
+                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
+            </Style>
+
+            <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Label}}">
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto"/>
+                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
+            </Style>
 
             <!-- View DataTemplates -->
             <DataTemplate DataType="{x:Type vm:DashboardViewModel}">

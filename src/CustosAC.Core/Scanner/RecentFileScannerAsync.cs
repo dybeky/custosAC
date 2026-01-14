@@ -10,7 +10,6 @@ namespace CustosAC.Core.Scanner;
 /// </summary>
 public class RecentFileScannerAsync : BaseScannerAsync
 {
-    private readonly CheatHashDatabase _hashDatabase;
     private readonly int _daysToCheck;
 
     public override string Name => "Recent Files Scanner";
@@ -20,11 +19,9 @@ public class RecentFileScannerAsync : BaseScannerAsync
         KeywordMatcherService keywordMatcher,
         IUIService uiService,
         ScanSettings scanSettings,
-        CheatHashDatabase hashDatabase,
         int daysToCheck = 7)
         : base(keywordMatcher, uiService, scanSettings)
     {
-        _hashDatabase = hashDatabase;
         _daysToCheck = daysToCheck;
     }
 
@@ -129,13 +126,9 @@ public class RecentFileScannerAsync : BaseScannerAsync
         int level = 0;
 
         if (KeywordMatcher.ContainsKeyword(fileInfo.Name)) { level += 3; reasons.Add("Keyword"); }
-        if (CheatHashDatabase.IsSuspiciousFileName(fileInfo.Name)) { level += 2; reasons.Add("Suspicious name"); }
         if (filePath.ToLowerInvariant().Contains(@"\temp\")) { level += 2; reasons.Add("Temp folder"); }
         if ((fileInfo.Attributes & FileAttributes.Hidden) != 0) { level += 2; reasons.Add("Hidden"); }
         if (fileInfo.Length < 10 * 1024) { level += 1; reasons.Add("Small file"); }
-
-        var hashResult = _hashDatabase.CheckFileHash(filePath);
-        if (hashResult.IsKnownCheat) { level += 5; reasons.Add($"KNOWN: {hashResult.CheatName}"); }
 
         return (level, string.Join(", ", reasons));
     }

@@ -22,22 +22,38 @@ public partial class ManualViewModel : ViewModelBase
         _gamePathFinder = gamePathFinder;
     }
 
+    /// <summary>
+    /// Helper method to start a process and dispose it properly.
+    /// </summary>
+    private static void StartProcess(ProcessStartInfo startInfo)
+    {
+        using var process = Process.Start(startInfo);
+    }
+
+    /// <summary>
+    /// Helper method to open a folder in explorer.
+    /// </summary>
+    private static void OpenFolder(string path)
+    {
+        using var process = Process.Start("explorer.exe", $"\"{path}\"");
+    }
+
     // Internet/Network Data Usage
     [RelayCommand]
     private void OpenDataUsage()
     {
         try
         {
-            using var process = Process.Start(new ProcessStartInfo
+            StartProcess(new ProcessStartInfo
             {
                 FileName = "ms-settings:datausage",
                 UseShellExecute = true
             });
             StatusMessage = "Opening Data Usage settings...";
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open Data Usage settings";
+            StatusMessage = $"Failed to open Data Usage settings: {ex.Message}";
         }
     }
 
@@ -50,7 +66,7 @@ public partial class ManualViewModel : ViewModelBase
             var videosPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Videos");
             if (Directory.Exists(videosPath))
             {
-                using var process = Process.Start("explorer.exe", $"\"{videosPath}\"");
+                OpenFolder(videosPath);
                 StatusMessage = "Opening Videos folder...";
             }
             else
@@ -58,9 +74,9 @@ public partial class ManualViewModel : ViewModelBase
                 StatusMessage = "Videos folder not found";
             }
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open Videos folder";
+            StatusMessage = $"Failed to open Videos folder: {ex.Message}";
         }
     }
 
@@ -76,16 +92,16 @@ public partial class ManualViewModel : ViewModelBase
 
             if (!string.IsNullOrEmpty(unturnedPath) && Directory.Exists(unturnedPath))
             {
-                using var process = Process.Start("explorer.exe", $"\"{unturnedPath}\"");
+                OpenFolder(unturnedPath);
                 StatusMessage = $"Opening Unturned: {unturnedPath}";
                 return;
             }
 
             StatusMessage = "Unturned folder not found on any drive";
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open Unturned folder";
+            StatusMessage = $"Failed to open Unturned folder: {ex.Message}";
         }
     }
 
@@ -98,7 +114,7 @@ public partial class ManualViewModel : ViewModelBase
             var downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             if (Directory.Exists(downloadsPath))
             {
-                using var process = Process.Start("explorer.exe", $"\"{downloadsPath}\"");
+                OpenFolder(downloadsPath);
                 StatusMessage = "Opening Downloads folder...";
             }
             else
@@ -106,9 +122,9 @@ public partial class ManualViewModel : ViewModelBase
                 StatusMessage = "Downloads folder not found";
             }
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open Downloads folder";
+            StatusMessage = $"Failed to open Downloads folder: {ex.Message}";
         }
     }
 
@@ -119,12 +135,12 @@ public partial class ManualViewModel : ViewModelBase
         try
         {
             var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            using var process = Process.Start("explorer.exe", $"\"{appDataPath}\"");
+            OpenFolder(appDataPath);
             StatusMessage = "Opening AppData folder...";
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open AppData folder";
+            StatusMessage = $"Failed to open AppData folder: {ex.Message}";
         }
     }
 
@@ -135,12 +151,12 @@ public partial class ManualViewModel : ViewModelBase
         try
         {
             var localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            using var process = Process.Start("explorer.exe", $"\"{localAppDataPath}\"");
+            OpenFolder(localAppDataPath);
             StatusMessage = "Opening LocalAppData folder...";
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open LocalAppData folder";
+            StatusMessage = $"Failed to open LocalAppData folder: {ex.Message}";
         }
     }
 
@@ -153,7 +169,7 @@ public partial class ManualViewModel : ViewModelBase
             var prefetchPath = @"C:\Windows\Prefetch";
             if (Directory.Exists(prefetchPath))
             {
-                using var process = Process.Start("explorer.exe", $"\"{prefetchPath}\"");
+                OpenFolder(prefetchPath);
                 StatusMessage = "Opening Prefetch folder...";
             }
             else
@@ -161,9 +177,9 @@ public partial class ManualViewModel : ViewModelBase
                 StatusMessage = "Prefetch folder not found";
             }
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open Prefetch folder";
+            StatusMessage = $"Failed to open Prefetch folder: {ex.Message}";
         }
     }
 
@@ -231,7 +247,10 @@ public partial class ManualViewModel : ViewModelBase
                         proc.Kill();
                         proc.WaitForExit(1000);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to kill regedit process: {ex.Message}");
+                    }
                 }
             }
             finally
@@ -239,7 +258,7 @@ public partial class ManualViewModel : ViewModelBase
                 // Dispose all process objects to prevent memory leak
                 foreach (var proc in processes)
                 {
-                    try { proc.Dispose(); } catch { }
+                    proc.Dispose();
                 }
             }
 
@@ -251,7 +270,7 @@ public partial class ManualViewModel : ViewModelBase
             key?.SetValue("LastKey", registryPath);
 
             // Start regedit
-            using var process = Process.Start(new ProcessStartInfo
+            StartProcess(new ProcessStartInfo
             {
                 FileName = "regedit.exe",
                 UseShellExecute = true
@@ -273,7 +292,7 @@ public partial class ManualViewModel : ViewModelBase
             var oneDrivePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive");
             if (Directory.Exists(oneDrivePath))
             {
-                using var process = Process.Start("explorer.exe", $"\"{oneDrivePath}\"");
+                OpenFolder(oneDrivePath);
                 StatusMessage = "Opening OneDrive folder...";
             }
             else
@@ -281,9 +300,9 @@ public partial class ManualViewModel : ViewModelBase
                 StatusMessage = "OneDrive folder not found";
             }
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open OneDrive folder";
+            StatusMessage = $"Failed to open OneDrive folder: {ex.Message}";
         }
     }
 
@@ -299,16 +318,16 @@ public partial class ManualViewModel : ViewModelBase
 
             if (!string.IsNullOrEmpty(steamPath) && Directory.Exists(steamPath))
             {
-                using var process = Process.Start("explorer.exe", $"\"{steamPath}\"");
+                OpenFolder(steamPath);
                 StatusMessage = $"Opening Steam: {steamPath}";
                 return;
             }
 
             StatusMessage = "Steam folder not found on any drive";
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open Steam folder";
+            StatusMessage = $"Failed to open Steam folder: {ex.Message}";
         }
     }
 
@@ -318,16 +337,16 @@ public partial class ManualViewModel : ViewModelBase
     {
         try
         {
-            using var process = Process.Start(new ProcessStartInfo
+            StartProcess(new ProcessStartInfo
             {
                 FileName = "https://t.me/undeadsellerbot",
                 UseShellExecute = true
             });
             StatusMessage = "Opening Telegram @undeadsellerbot...";
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open Telegram";
+            StatusMessage = $"Failed to open Telegram: {ex.Message}";
         }
     }
 
@@ -337,16 +356,16 @@ public partial class ManualViewModel : ViewModelBase
     {
         try
         {
-            using var process = Process.Start(new ProcessStartInfo
+            StartProcess(new ProcessStartInfo
             {
                 FileName = "https://t.me/MelonySolutionBot",
                 UseShellExecute = true
             });
             StatusMessage = "Opening Telegram @MelonySolutionBot...";
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to open Telegram";
+            StatusMessage = $"Failed to open Telegram: {ex.Message}";
         }
     }
 
@@ -356,7 +375,7 @@ public partial class ManualViewModel : ViewModelBase
     {
         try
         {
-            using var process = Process.Start(new ProcessStartInfo
+            StartProcess(new ProcessStartInfo
             {
                 FileName = "windowsdefender://",
                 UseShellExecute = true
@@ -368,16 +387,16 @@ public partial class ManualViewModel : ViewModelBase
             // Fallback to Windows Security settings
             try
             {
-                using var process = Process.Start(new ProcessStartInfo
+                StartProcess(new ProcessStartInfo
                 {
                     FileName = "ms-settings:windowsdefender",
                     UseShellExecute = true
                 });
                 StatusMessage = "Opening Windows Security...";
             }
-            catch
+            catch (Exception ex)
             {
-                StatusMessage = "Failed to open Windows Defender";
+                StatusMessage = $"Failed to open Windows Defender: {ex.Message}";
             }
         }
     }

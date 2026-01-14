@@ -16,18 +16,11 @@ public class LogService : IDisposable
 
     public LogService(string? logDirectory = null)
     {
-        _logDirectory = logDirectory ?? Path.Combine(AppContext.BaseDirectory, "Logs");
+        // Logging to file is disabled - only in-memory logging
+        _logDirectory = string.Empty;
+        _logFilePath = string.Empty;
 
-        if (!Directory.Exists(_logDirectory))
-        {
-            try { Directory.CreateDirectory(_logDirectory); }
-            catch { _logDirectory = Path.GetTempPath(); }
-        }
-
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        _logFilePath = Path.Combine(_logDirectory, $"CustosAC_{timestamp}.log");
-
-        LogInfo("=== CustosAC Session Started ===");
+        LogInfo("=== CustosAC Session Started (Memory Only) ===");
         LogInfo($"Computer: {Environment.MachineName}");
         LogInfo($"User: {Environment.UserName}");
         LogInfo($"OS: {Environment.OSVersion}");
@@ -66,8 +59,7 @@ public class LogService : IDisposable
         lock (_lock)
         {
             _sessionLog.AppendLine(logLine);
-            try { File.AppendAllText(_logFilePath, logLine + Environment.NewLine); }
-            catch { }
+            // File logging disabled - only in-memory logging is active
         }
     }
 

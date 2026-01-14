@@ -62,7 +62,7 @@ public partial class MainViewModel : ViewModelBase
         {
             Interval = TimeSpan.FromSeconds(1)
         };
-        _timer.Tick += (s, e) => CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+        _timer.Tick += TimerTickHandler;
         _timer.Start();
 
         // Fast startup - run version and update check in parallel
@@ -74,14 +74,23 @@ public partial class MainViewModel : ViewModelBase
 
             // Short loading screen (800ms)
             await Task.Delay(800);
-            await Application.Current.Dispatcher.InvokeAsync(() => IsLoading = false);
+
+            // Null-check for dispatcher to prevent crash during shutdown
+            if (Application.Current?.Dispatcher != null)
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() => IsLoading = false);
+            }
 
             // Wait for version to complete
             await versionTask;
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+
+            if (Application.Current?.Dispatcher != null)
             {
-                DisplayVersion = _versionService.Version;
-            });
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    DisplayVersion = _versionService.Version;
+                });
+            }
 
             // Wait for update check and show overlay if needed
             await updateTask;
@@ -111,28 +120,33 @@ public partial class MainViewModel : ViewModelBase
                 ?? "N/A";
             var downloadUrl = doc.RootElement.GetProperty("html_url").GetString();
 
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            // Null-check for dispatcher to prevent crash during shutdown
+            if (Application.Current?.Dispatcher != null)
             {
-                LatestVersion = latestVersion;
-                UpdateUrl = downloadUrl;
-
-                // Compare after version is loaded
-                if (!string.IsNullOrEmpty(DisplayVersion) && DisplayVersion != "...")
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    var currentVersion = DisplayVersion.Trim();
-                    var latest = latestVersion.Trim();
-                    IsUpToDate = string.Equals(currentVersion, latest, StringComparison.OrdinalIgnoreCase);
+                    LatestVersion = latestVersion;
+                    UpdateUrl = downloadUrl;
 
-                    if (!IsUpToDate)
+                    // Compare after version is loaded
+                    if (!string.IsNullOrEmpty(DisplayVersion) && DisplayVersion != "...")
                     {
-                        ShowUpdateOverlay = true;
+                        var currentVersion = DisplayVersion.Trim();
+                        var latest = latestVersion.Trim();
+                        IsUpToDate = CompareVersions(currentVersion, latest);
+
+                        if (!IsUpToDate)
+                        {
+                            ShowUpdateOverlay = true;
+                        }
                     }
-                }
-            });
+                });
+            }
         }
-        catch
+        catch (Exception ex)
         {
-            // Silent fail - don't show error on startup
+            // Log error but don't show to user on startup
+            System.Diagnostics.Debug.WriteLine($"Failed to check for updates silently: {ex.Message}");
         }
         finally
         {
@@ -207,12 +221,11 @@ public partial class MainViewModel : ViewModelBase
             LatestVersion = latestVersion;
             UpdateUrl = downloadUrl;
 
-            // Compare versions - check if current version matches latest
+            // Compare versions using semantic comparison
             var currentVersion = DisplayVersion.Trim();
             var latest = latestVersion.Trim();
 
-            // Simple comparison - if versions match, user is up to date
-            IsUpToDate = string.Equals(currentVersion, latest, StringComparison.OrdinalIgnoreCase);
+            IsUpToDate = CompareVersions(currentVersion, latest);
 
             // Show overlay
             ShowUpdateOverlay = true;
@@ -230,16 +243,34 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void OpenUpdate()
     {
-        if (UpdateUrl != null)
+        if (!string.IsNullOrEmpty(UpdateUrl))
         {
-            using var process = Process.Start(new ProcessStartInfo(UpdateUrl) { UseShellExecute = true });
+            try
+            {
+                // Validate URL before opening
+                if (Uri.TryCreate(UpdateUrl, UriKind.Absolute, out var uri) &&
+                    (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp))
+                {
+                    using var process = Process.Start(new ProcessStartInfo(UpdateUrl) { UseShellExecute = true });
+                }
+            }
+            catch
+            {
+                // Silently ignore if URL can't be opened
+            }
         }
-        ShowUpdateOverlay = false;
+
+        // Use dispatcher to safely hide overlay
+        Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+        {
+            ShowUpdateOverlay = false;
+        }), System.Windows.Threading.DispatcherPriority.Background);
     }
 
     [RelayCommand]
     private void DismissUpdate()
     {
+        // Simply set to false - XAML animation will handle smooth close
         ShowUpdateOverlay = false;
     }
 
@@ -256,11 +287,40 @@ public partial class MainViewModel : ViewModelBase
         CurrentNavigation = "Results";
     }
 
+    private void TimerTickHandler(object? sender, EventArgs e)
+    {
+        CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    /// <summary>
+    /// Compare two version strings semantically.
+    /// Returns true if current version >= latest version (user is up to date).
+    /// </summary>
+    private static bool CompareVersions(string current, string latest)
+    {
+        // Remove common prefixes like "v" or "V"
+        current = current.TrimStart('v', 'V').Trim();
+        latest = latest.TrimStart('v', 'V').Trim();
+
+        // Try to parse as Version for semantic comparison
+        if (Version.TryParse(current, out var currentVer) && Version.TryParse(latest, out var latestVer))
+        {
+            return currentVer >= latestVer;
+        }
+
+        // Fallback to string comparison
+        return string.Equals(current, latest, StringComparison.OrdinalIgnoreCase);
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
-            _timer?.Stop();
+            if (_timer != null)
+            {
+                _timer.Tick -= TimerTickHandler; // Unsubscribe from event
+                _timer.Stop();
+            }
         }
         base.Dispose(disposing);
     }

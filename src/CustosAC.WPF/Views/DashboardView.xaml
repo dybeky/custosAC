@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:behaviors="clr-namespace:CustosAC.WPF.Behaviors"
              mc:Ignorable="d"
              d:DesignHeight="500" d:DesignWidth="900">
 
@@ -156,8 +157,9 @@
                                    HorizontalAlignment="Center" Margin="0,10,0,0"/>
                     </StackPanel>
 
-                    <!-- Changelog Content -->
+                    <!-- Changelog Content with Smooth Scrolling -->
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                  behaviors:SmoothScrollBehavior.IsEnabled="True"
                                   Visibility="{Binding IsLoadingChangelog, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                         <StackPanel>
                             <!-- Release Date -->

@@ -11,11 +11,9 @@ namespace CustosAC.Core.Scanner;
 /// </summary>
 public class ProcessScannerAsync : BaseScannerAsync
 {
-    private readonly CheatHashDatabase _hashDatabase;
     private readonly LogService? _logService;
 
     private const int ProcessPathTimeoutMs = 2000;
-    private const int SuspiciousBasePriorityThreshold = 8;
 
     public override string Name => "Process Scanner";
     public override string Description => "Scanning running processes";
@@ -24,11 +22,9 @@ public class ProcessScannerAsync : BaseScannerAsync
         KeywordMatcherService keywordMatcher,
         IUIService uiService,
         ScanSettings scanSettings,
-        CheatHashDatabase hashDatabase,
         LogService? logService = null)
         : base(keywordMatcher, uiService, scanSettings)
     {
-        _hashDatabase = hashDatabase;
         _logService = logService;
     }
 
@@ -65,27 +61,10 @@ public class ProcessScannerAsync : BaseScannerAsync
                             continue;
                         }
 
-                        if (CheatHashDatabase.IsSuspiciousFileName(processName))
+                        if (!string.IsNullOrEmpty(processPath) && KeywordMatcher.ContainsKeywordWithWhitelist(processPath))
                         {
-                            results.Add(BuildProcessInfo(process, processPath, "Suspicious name"));
+                            results.Add(BuildProcessInfo(process, processPath, "Suspicious path"));
                             continue;
-                        }
-
-                        if (!string.IsNullOrEmpty(processPath))
-                        {
-                            if (KeywordMatcher.ContainsKeywordWithWhitelist(processPath))
-                            {
-                                results.Add(BuildProcessInfo(process, processPath, "Suspicious path"));
-                                continue;
-                            }
-
-                            var hashResult = _hashDatabase.CheckFileHash(processPath);
-                            if (hashResult.IsKnownCheat)
-                            {
-                                results.Add(BuildProcessInfo(process, processPath,
-                                    $"KNOWN CHEAT: {hashResult.CheatName}"));
-                                continue;
-                            }
                         }
                     }
                     catch { }

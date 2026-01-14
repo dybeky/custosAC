@@ -52,9 +52,9 @@ public partial class UtilitiesViewModel : ViewModelBase
             });
             StatusMessage = $"Opening {name}...";
         }
-        catch
+        catch (Exception ex)
         {
-            StatusMessage = $"Failed to open {name}";
+            StatusMessage = $"Failed to open {name}: {ex.Message}";
         }
     }
 }

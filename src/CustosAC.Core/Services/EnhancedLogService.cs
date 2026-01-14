@@ -50,25 +50,17 @@ public class EnhancedLogService : IDisposable
 
     public EnhancedLogService(string? logDirectory = null)
     {
-        _logDirectory = logDirectory ?? Path.Combine(AppContext.BaseDirectory, "Logs");
+        // Logging to file is disabled - only in-memory logging
+        _logDirectory = string.Empty;
+        _logFilePath = string.Empty;
 
-        if (!Directory.Exists(_logDirectory))
-        {
-            try { Directory.CreateDirectory(_logDirectory); }
-            catch { _logDirectory = Path.GetTempPath(); }
-        }
-
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        _logFilePath = Path.Combine(_logDirectory, $"CustosAC_Enhanced_{timestamp}.log");
-
-        // Start async writer task
+        // Start async writer task (will only process in-memory logs)
         _writeTask = Task.Run(async () => await ProcessLogQueueAsync());
 
-        LogInfo(LogCategory.General, "=== CustosAC Enhanced Logging Started ===");
+        LogInfo(LogCategory.General, "=== CustosAC Enhanced Logging Started (Memory Only) ===");
         LogInfo(LogCategory.General, $"Computer: {Environment.MachineName}");
         LogInfo(LogCategory.General, $"User: {Environment.UserName}");
         LogInfo(LogCategory.General, $"OS: {Environment.OSVersion}");
-        LogInfo(LogCategory.General, $"Log File: {_logFilePath}");
     }
 
     public void LogTrace(LogCategory category, string message, string? context = null)
@@ -123,14 +115,6 @@ public class EnhancedLogService : IDisposable
         };
 
         _logQueue.Enqueue(entry);
-
-        // Keep in-memory log trimmed
-        if (_sessionLog.Length > MaxInMemoryLogEntries * 200) // Approx 200 chars per entry
-        {
-            var lines = _sessionLog.ToString().Split(Environment.NewLine);
-            _sessionLog.Clear();
-            _sessionLog.AppendJoin(Environment.NewLine, lines.Skip(MaxInMemoryLogEntries / 2));
-        }
     }
 
     private async Task ProcessLogQueueAsync()
@@ -147,6 +131,15 @@ public class EnhancedLogService : IDisposable
                     try
                     {
                         _sessionLog.AppendLine(logLine);
+
+                        // Keep in-memory log trimmed (protected by semaphore)
+                        if (_sessionLog.Length > MaxInMemoryLogEntries * 200)
+                        {
+                            var lines = _sessionLog.ToString().Split(Environment.NewLine);
+                            _sessionLog.Clear();
+                            _sessionLog.AppendJoin(Environment.NewLine, lines.Skip(MaxInMemoryLogEntries / 2));
+                        }
+
                         await WriteToFileAsync(logLine);
                     }
                     finally
@@ -199,21 +192,8 @@ public class EnhancedLogService : IDisposable
 
     private async Task WriteToFileAsync(string logLine)
     {
-        try
-        {
-            // Check file size and rotate if needed
-            var fileInfo = new FileInfo(_logFilePath);
-            if (fileInfo.Exists && fileInfo.Length > MaxLogSizeMb * 1024 * 1024)
-            {
-                await RotateLogFileAsync();
-            }
-
-            await File.AppendAllTextAsync(_logFilePath, logLine + Environment.NewLine);
-        }
-        catch
-        {
-            // Silently fail on write errors
-        }
+        // File logging disabled - only in-memory logging is active
+        await Task.CompletedTask;
     }
 
     private async Task RotateLogFileAsync()
@@ -249,9 +229,9 @@ public class EnhancedLogService : IDisposable
 
     public string GetLogFilePath() => _logFilePath;
 
-    public string GetSessionLog()
+    public async Task<string> GetSessionLogAsync()
     {
-        _writeSemaphore.Wait();
+        await _writeSemaphore.WaitAsync();
         try
         {
             return _sessionLog.ToString();
@@ -260,6 +240,12 @@ public class EnhancedLogService : IDisposable
         {
             _writeSemaphore.Release();
         }
+    }
+
+    public string GetSessionLog()
+    {
+        // Synchronous version - use with caution, may block
+        return _sessionLog.ToString();
     }
 
     public async Task FlushAsync()

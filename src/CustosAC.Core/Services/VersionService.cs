@@ -8,10 +8,10 @@ namespace CustosAC.Core.Services;
 public class VersionService
 {
     private const string GitHubRepo = "dybeky/custosAC";
-    private static string? _cachedVersion;
-    private static string? _cachedDate;
-    private static string? _lastError;
-    private static bool _isLoaded;
+    private static volatile string? _cachedVersion;
+    private static volatile string? _cachedDate;
+    private static volatile string? _lastError;
+    private static volatile bool _isLoaded;
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public string Version => _cachedVersion ?? "...";

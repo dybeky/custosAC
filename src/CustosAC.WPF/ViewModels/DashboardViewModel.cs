@@ -25,11 +25,13 @@ public partial class DashboardViewModel : ViewModelBase
 
     public LocalizationService Localization => LocalizationService.Instance;
 
-    public DashboardViewModel(CheatHashDatabase hashDatabase, KeywordMatcherService keywordMatcher, VersionService versionService)
+    public DashboardViewModel(KeywordMatcherService keywordMatcher, VersionService versionService)
     {
         _versionService = versionService;
         Changelog = Localization.Strings.Loading;
-        _ = LoadDataAsync(); // Fire and forget with explicit discard
+
+        // Start loading data asynchronously
+        _ = LoadDataAsync();
     }
 
     private async Task LoadDataAsync()
@@ -62,13 +64,17 @@ public partial class DashboardViewModel : ViewModelBase
             changelog = Localization.Strings.FailedToLoad;
         }
 
-        await Application.Current.Dispatcher.InvokeAsync(() =>
+        // Null-check for dispatcher to prevent crash during shutdown
+        if (Application.Current?.Dispatcher != null)
         {
-            ReleaseVersion = _versionService.Version;
-            ReleaseDate = _versionService.ReleaseDate;
-            Changelog = changelog;
-            IsLoadingChangelog = false;
-        });
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                ReleaseVersion = _versionService.Version;
+                ReleaseDate = _versionService.ReleaseDate;
+                Changelog = changelog;
+                IsLoadingChangelog = false;
+            });
+        }
     }
 
     private static string CleanMarkdown(string text)

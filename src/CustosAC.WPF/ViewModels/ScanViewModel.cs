@@ -15,6 +15,8 @@ public partial class ScanViewModel : ViewModelBase
     private readonly LogService _logService;
     private CancellationTokenSource? _cts;
 
+    private const double ProgressBarMaxWidth = 260;
+
     [ObservableProperty]
     private int _totalScanners;
 
@@ -23,6 +25,18 @@ public partial class ScanViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _isReadyToScan = true;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ScanProgressWidth))]
+    private double _scanProgress;
+
+    [ObservableProperty]
+    private int _completedScanners;
+
+    [ObservableProperty]
+    private string _currentScannerName = "";
+
+    public double ScanProgressWidth => ScanProgress * ProgressBarMaxWidth;
 
     public LocalizationService Localization => LocalizationService.Instance;
 
@@ -43,6 +57,9 @@ public partial class ScanViewModel : ViewModelBase
         IsReadyToScan = false;
         IsScanning = true;
         _results.Clear();
+        ScanProgress = 0;
+        CompletedScanners = 0;
+        CurrentScannerName = "";
 
         _cts = new CancellationTokenSource();
         bool wasCancelled = false;
@@ -50,21 +67,26 @@ public partial class ScanViewModel : ViewModelBase
         try
         {
             var scanners = _scannerFactory.CreateAllScanners().ToList();
+            var totalCount = scanners.Count;
 
-            foreach (var scanner in scanners)
+            for (int i = 0; i < scanners.Count; i++)
             {
+                var scanner = scanners[i];
+
                 if (_cts.Token.IsCancellationRequested)
                 {
                     wasCancelled = true;
                     break;
                 }
 
+                CurrentScannerName = scanner.GetType().Name.Replace("Async", "").Replace("Scanner", "");
+
                 try
                 {
                     using (scanner)
                     {
-                        var result = await scanner.ScanAsync(_cts.Token);
-                        _results.Add((scanner.GetType().Name.Replace("Async", "").Replace("Scanner", ""), result));
+                        var result = await scanner.ScanAsync(_cts.Token).ConfigureAwait(false);
+                        _results.Add((CurrentScannerName, result));
                     }
                 }
                 catch (OperationCanceledException)
@@ -76,22 +98,24 @@ public partial class ScanViewModel : ViewModelBase
                 {
                     _logService.LogError($"Scanner failed", ex);
                 }
+
+                CompletedScanners = i + 1;
+                ScanProgress = (double)(i + 1) / totalCount;
             }
         }
         finally
         {
             IsScanning = false;
+            CurrentScannerName = "";
             _cts?.Dispose();
             _cts = null;
         }
 
-        // Save results to file only if not cancelled
         if (!wasCancelled && _results.Count > 0)
         {
             await SaveResultsToFile();
         }
 
-        // Return to ready state
         IsReadyToScan = true;
     }
 
@@ -109,7 +133,6 @@ public partial class ScanViewModel : ViewModelBase
         {
             var sb = new StringBuilder();
 
-            // Simple clean header
             sb.AppendLine("==============================================================");
             sb.AppendLine("                    custosAC Scan Results                     ");
             sb.AppendLine($"                     {DateTime.Now:yyyy-MM-dd HH:mm:ss}                      ");
