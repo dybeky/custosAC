@@ -3,17 +3,28 @@
 *.dll
 *.so
 *.dylib
+*.pdb
 
 # C# build artifacts
 bin/
 obj/
 publish/
+out/
+
+# NuGet
+*.nupkg
+packages/
+
+# Logs
+*.log
+Logs/
 
 # Temporary files
 *.tmp
 *.bak
 *.swp
 *~
+nul
 
 # IDE files
 .vscode/
