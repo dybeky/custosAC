@@ -67,7 +67,10 @@ public class ProcessScannerAsync : BaseScannerAsync
                             continue;
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        _logService?.LogInfo($"Process scan skipped {process.ProcessName}: {ex.Message}");
+                    }
                 }
 
                 return results;

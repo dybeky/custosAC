@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using CustosAC.Core.Abstractions;
 using CustosAC.Core.Configuration;
 using CustosAC.Core.Models;
@@ -60,46 +61,34 @@ public class BrowserHistoryScannerAsync : BaseScannerAsync
     public override async Task<ScanResult> ScanAsync(CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.Now;
-        var findings = new List<string>();
+        var findings = new ConcurrentBag<string>();
 
         try
         {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+            // Scan all Chromium-based browsers in parallel
+            var chromiumTasks = new List<Task>
+            {
+                ScanChromiumHistory(Path.Combine(localAppData, @"Google\Chrome\User Data\Default\History"), "Chrome", findings, cancellationToken),
+                ScanChromiumHistory(Path.Combine(localAppData, @"Microsoft\Edge\User Data\Default\History"), "Edge", findings, cancellationToken),
+                ScanChromiumHistory(Path.Combine(localAppData, @"BraveSoftware\Brave-Browser\User Data\Default\History"), "Brave", findings, cancellationToken),
+                ScanChromiumHistory(Path.Combine(appData, @"Opera Software\Opera Stable\History"), "Opera", findings, cancellationToken),
+                ScanChromiumHistory(Path.Combine(appData, @"Opera Software\Opera GX Stable\History"), "Opera GX", findings, cancellationToken),
+                ScanChromiumHistory(Path.Combine(localAppData, @"Yandex\YandexBrowser\User Data\Default\History"), "Yandex", findings, cancellationToken)
+            };
+
+            await Task.WhenAll(chromiumTasks);
+
+            // Firefox (synchronous, runs after Chromium browsers)
             await Task.Run(() =>
             {
-                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-                // Chrome
-                var chromePath = Path.Combine(localAppData, @"Google\Chrome\User Data\Default\History");
-                ScanChromiumHistory(chromePath, "Chrome", findings, cancellationToken);
-
-                // Edge
-                var edgePath = Path.Combine(localAppData, @"Microsoft\Edge\User Data\Default\History");
-                ScanChromiumHistory(edgePath, "Edge", findings, cancellationToken);
-
-                // Brave
-                var bravePath = Path.Combine(localAppData, @"BraveSoftware\Brave-Browser\User Data\Default\History");
-                ScanChromiumHistory(bravePath, "Brave", findings, cancellationToken);
-
-                // Opera
-                var operaPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Opera Software\Opera Stable\History");
-                ScanChromiumHistory(operaPath, "Opera", findings, cancellationToken);
-
-                // Opera GX
-                var operaGxPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Opera Software\Opera GX Stable\History");
-                ScanChromiumHistory(operaGxPath, "Opera GX", findings, cancellationToken);
-
-                // Yandex Browser
-                var yandexPath = Path.Combine(localAppData, @"Yandex\YandexBrowser\User Data\Default\History");
-                ScanChromiumHistory(yandexPath, "Yandex", findings, cancellationToken);
-
-                // Firefox
-                var firefoxProfilesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Mozilla\Firefox\Profiles");
+                var firefoxProfilesPath = Path.Combine(appData, @"Mozilla\Firefox\Profiles");
                 ScanFirefoxHistory(firefoxProfilesPath, findings, cancellationToken);
-
             }, cancellationToken);
 
-            return CreateSuccessResult(findings, startTime);
+            return CreateSuccessResult(findings.ToList(), startTime);
         }
         catch (OperationCanceledException)
         {
@@ -111,7 +100,7 @@ public class BrowserHistoryScannerAsync : BaseScannerAsync
         }
     }
 
-    private async void ScanChromiumHistory(string historyPath, string browserName, List<string> findings, CancellationToken cancellationToken)
+    private async Task ScanChromiumHistory(string historyPath, string browserName, ConcurrentBag<string> findings, CancellationToken cancellationToken)
     {
         if (!File.Exists(historyPath))
         {
@@ -165,9 +154,10 @@ public class BrowserHistoryScannerAsync : BaseScannerAsync
                 {
                     if (cancellationToken.IsCancellationRequested) break;
 
+                    if (reader.IsDBNull(0)) continue;
                     var url = reader.GetString(0);
                     var title = reader.IsDBNull(1) ? "" : reader.GetString(1);
-                    var visitTime = reader.GetInt64(2);
+                    var visitTime = reader.IsDBNull(2) ? 0L : reader.GetInt64(2);
 
                     foreach (var suspiciousDomain in _suspiciousUrls)
                     {
@@ -211,7 +201,7 @@ public class BrowserHistoryScannerAsync : BaseScannerAsync
         }
     }
 
-    private void ScanFirefoxHistory(string profilesPath, List<string> findings, CancellationToken cancellationToken)
+    private void ScanFirefoxHistory(string profilesPath, ConcurrentBag<string> findings, CancellationToken cancellationToken)
     {
         if (!Directory.Exists(profilesPath)) return;
 
@@ -269,15 +259,17 @@ public class BrowserHistoryScannerAsync : BaseScannerAsync
                         try { File.Delete(tempPath); } catch { }
                     }
                 }
-                catch (SqliteException)
+                catch (SqliteException ex)
                 {
-                    // Database might be locked or corrupted
+                    _enhancedLog?.LogDebug(EnhancedLogService.LogCategory.Scanner,
+                        $"Firefox database error: {ex.Message}", "Firefox");
                 }
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Silently ignore errors
+            _enhancedLog?.LogDebug(EnhancedLogService.LogCategory.Scanner,
+                $"Firefox scan error: {ex.Message}", "Firefox");
         }
     }
 

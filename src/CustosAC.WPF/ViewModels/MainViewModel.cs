@@ -68,32 +68,44 @@ public partial class MainViewModel : ViewModelBase
         // Fast startup - run version and update check in parallel
         Task.Run(async () =>
         {
-            // Start both tasks in parallel
-            var versionTask = _versionService.LoadVersionAsync();
-            var updateTask = CheckUpdateSilent();
-
-            // Short loading screen (800ms)
-            await Task.Delay(800);
-
-            // Null-check for dispatcher to prevent crash during shutdown
-            if (Application.Current?.Dispatcher != null)
+            try
             {
-                await Application.Current.Dispatcher.InvokeAsync(() => IsLoading = false);
-            }
+                // Start both tasks in parallel
+                var versionTask = _versionService.LoadVersionAsync();
+                var updateTask = CheckUpdateSilent();
 
-            // Wait for version to complete
-            await versionTask;
+                // Short loading screen (800ms)
+                await Task.Delay(800);
 
-            if (Application.Current?.Dispatcher != null)
-            {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                // Null-check for dispatcher to prevent crash during shutdown
+                if (Application.Current?.Dispatcher != null)
                 {
-                    DisplayVersion = _versionService.Version;
-                });
-            }
+                    await Application.Current.Dispatcher.InvokeAsync(() => IsLoading = false);
+                }
 
-            // Wait for update check and show overlay if needed
-            await updateTask;
+                // Wait for version to complete
+                await versionTask;
+
+                if (Application.Current?.Dispatcher != null)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        DisplayVersion = _versionService.Version;
+                    });
+                }
+
+                // Wait for update check and show overlay if needed
+                await updateTask;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Startup initialization error: {ex.Message}");
+                // Ensure loading screen is hidden even on error
+                if (Application.Current?.Dispatcher != null)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(() => IsLoading = false);
+                }
+            }
         });
     }
 
