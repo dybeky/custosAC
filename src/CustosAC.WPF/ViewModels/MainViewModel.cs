@@ -221,6 +221,13 @@ public partial class MainViewModel : ViewModelBase
             LatestVersion = latestVersion;
             UpdateUrl = downloadUrl;
 
+            // Wait for version to be loaded if still loading
+            if (string.IsNullOrEmpty(DisplayVersion) || DisplayVersion == "...")
+            {
+                await _versionService.LoadVersionAsync();
+                DisplayVersion = _versionService.Version;
+            }
+
             // Compare versions using semantic comparison
             var currentVersion = DisplayVersion.Trim();
             var latest = latestVersion.Trim();
