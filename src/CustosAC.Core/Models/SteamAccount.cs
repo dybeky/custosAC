@@ -17,8 +17,18 @@ public class SteamAccount
     /// <summary>Whether password is remembered</summary>
     public bool RememberPassword { get; set; }
 
-    /// <summary>Last login timestamp</summary>
+    /// <summary>Last login timestamp (Unix)</summary>
     public long Timestamp { get; set; }
+
+    /// <summary>Last login date/time (converted from Unix timestamp)</summary>
+    public DateTime? LastLogin => Timestamp > 0
+        ? DateTimeOffset.FromUnixTimeSeconds(Timestamp).LocalDateTime
+        : null;
+
+    /// <summary>Formatted last login string</summary>
+    public string LastLoginFormatted => LastLogin.HasValue
+        ? LastLogin.Value.ToString("dd.MM.yyyy HH:mm")
+        : "Unknown";
 
     /// <summary>Steam profile URL</summary>
     public string ProfileUrl => $"https://steamcommunity.com/profiles/{SteamId}";

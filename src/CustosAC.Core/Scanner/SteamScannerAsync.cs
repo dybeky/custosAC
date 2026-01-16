@@ -47,7 +47,7 @@ public class SteamScannerAsync : BaseScannerAsync
                 return CreateErrorResult("loginusers.vdf file not found", startTime);
 
             var accounts = await Task.Run(() => ParseSteamAccounts(vdfPath), cancellationToken);
-            var findings = accounts.Select(a => $"SteamID: {a.SteamId} | Account: {a.AccountName} | Name: {a.PersonaName}").ToList();
+            var findings = accounts.Select(a => $"SteamID: {a.SteamId} | Account: {a.AccountName} | Name: {a.PersonaName} | Last Login: {a.LastLoginFormatted}").ToList();
 
             return CreateSuccessResult(findings, startTime);
         }
