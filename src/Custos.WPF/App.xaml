@@ -1,0 +1,68 @@
+<Application x:Class="Custos.WPF.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vm="clr-namespace:Custos.WPF.ViewModels"
+             xmlns:views="clr-namespace:Custos.WPF.Views"
+             xmlns:converters="clr-namespace:Custos.WPF.Converters"
+             ShutdownMode="OnExplicitShutdown">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Material Design -->
+                <materialDesign:BundledTheme BaseTheme="Dark" PrimaryColor="DeepOrange" SecondaryColor="Orange" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
+
+                <!-- Custom Theme -->
+                <ResourceDictionary Source="Themes/DarkTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Converters -->
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+            <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
+            <converters:ProgressToWidthConverter x:Key="ProgressToWidthConverter"/>
+            <converters:StringEqualsConverter x:Key="StringEqualsConverter" />
+
+            <!-- Global Text Rendering Settings for smooth font rendering -->
+            <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto"/>
+                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
+            </Style>
+
+            <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource {x:Type TextBox}}">
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto"/>
+                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
+            </Style>
+
+            <Style TargetType="{x:Type Label}" BasedOn="{StaticResource {x:Type Label}}">
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto"/>
+                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
+            </Style>
+
+            <!-- View DataTemplates -->
+            <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+                <views:DashboardView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ScanViewModel}">
+                <views:ScanView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ResultsViewModel}">
+                <views:ResultsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+                <views:SettingsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ManualViewModel}">
+                <views:ManualView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:UtilitiesViewModel}">
+                <views:UtilitiesView />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
